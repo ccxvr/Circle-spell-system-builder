@@ -1352,19 +1352,63 @@ function renderCircle(spell) {
     }
   });
 
-  exportSvgBtn.addEventListener("click", () => {
-    if (!currentSpell) build();
-    const svgEl = document.getElementById("spellSvg");
-    if (!svgEl) return;
-    const svg = svgEl.outerHTML;
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "spell-circle.svg";
-    a.click();
-    URL.revokeObjectURL(url);
+exportSvgBtn.addEventListener("click", async () => {
+  if (!currentSpell) build();
+
+  const svgEl = document.getElementById("spellSvg");
+  if (!svgEl) return;
+
+  const clone = svgEl.cloneNode(true);
+
+  clone.querySelectorAll(".arcane-rune").forEach(el => {
+    el.setAttribute("fill", "#d8b66a");
   });
+
+  clone.querySelectorAll(".glyph-label").forEach(el => {
+    el.setAttribute("fill", "#d8b66a");
+  });
+
+  clone.querySelectorAll(".modifier-rune").forEach(el => {
+    el.setAttribute("fill", "#9ad7d3");
+  });
+
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(clone);
+
+  const blob = new Blob([svgString], {
+    type: "image/svg+xml;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const img = new Image();
+
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+
+    canvas.width = 2048;
+    canvas.height = 2048;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(blob => {
+      const pngUrl = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = pngUrl;
+      a.download = "spell-circle.png";
+      a.click();
+
+      URL.revokeObjectURL(pngUrl);
+    }, "image/png");
+  };
+
+  img.src = url;
+});
 
   buildPalette();
   setupDrop();
