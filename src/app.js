@@ -414,6 +414,11 @@ if (vector && glyphs.vectors[vector.name]) {
     return `that lasts for ${duration}T`;
   }
 
+  if (vector.name === "Conjure") {
+    const duration = 8 * Math.pow(2, tCount);
+    return `that lasts for ${duration}T`;
+  }
+
   if (VECTOR_AOE.has(vector.name)) {
     if (!tCount) return "";
     return `that persists for ${tCount * 3}T`;
@@ -752,7 +757,10 @@ function describeSubspell(subspell, previous, previousRings) {
       idx > conjureIndex && VECTOR_AOE.has(v.name)
     );
 
-    const duration = areaVector ? durationPhrase(areaVector, effect.name) : "";
+    const conjureVector = vectors.find(v => v.name === "Conjure");
+    const conjureDuration = durationPhrase(conjureVector, effect.name);
+    const areaDuration = areaVector ? durationPhrase(areaVector, effect.name) : "";
+    const duration = areaDuration || conjureDuration;
     phrase = conjureText(aspect.name, level);
 
     if (areaVector) {
