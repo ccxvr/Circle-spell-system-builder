@@ -2,66 +2,81 @@ const glyphs = {
   "effects": {
     "Harm": {
       "complexity": 1,
-      "verb": "harmful"
+      "verb": "harmful",
+      "symbol": "⚚"
     },
     "Heal": {
       "complexity": 1,
-      "verb": "healing"
+      "verb": "healing",
+      "symbol": "☉"
     },
     "Hex": {
       "complexity": 1,
-      "verb": "hexing"
+      "verb": "hexing",
+      "symbol": "☿"
     },
     "Bless": {
       "complexity": 1,
-      "verb": "blessing"
+      "verb": "blessing",
+      "symbol": "✧"
     },
     "Neutral": {
       "complexity": 1,
       "verb": "neutral",
+      "symbol": "○",
       "notes": "Only effect that may use Summon."
     }
   },
   "aspects": {
     "Fire": {
       "adjective": "fire",
-      "creature": "Fire creature"
-    },
-    "Poison": {
-      "adjective": "poison",
-      "creature": "Poison creature"
-    },
-    "Force": {
-      "adjective": "force",
-      "creature": "Force creature"
-    },
-    "Acid": {
-      "adjective": "acid",
-      "creature": "Acid creature"
-    },
-    "Darkness": {
-      "adjective": "darkness",
-      "creature": "Darkness creature"
-    },
-    "Light": {
-      "adjective": "light",
-      "creature": "Light creature"
-    },
-    "Thunder": {
-      "adjective": "thunder",
-      "creature": "Thunder creature"
-    },
-    "Lightning": {
-      "adjective": "lightning",
-      "creature": "Lightning creature"
+      "creature": "Fire creature",
+      "symbol": "△"
     },
     "Cold": {
       "adjective": "cold",
-      "creature": "Cold creature"
+      "creature": "Cold creature",
+      "symbol": "🜄"
+    },
+    "Lightning": {
+      "adjective": "lightning",
+      "creature": "Lightning creature",
+      "symbol": "🜁"
+    },
+    "Thunder": {
+      "adjective": "thunder",
+      "creature": "Thunder creature",
+      "symbol": "☳"
     },
     "Earth": {
       "adjective": "earth",
-      "creature": "Earth creature"
+      "creature": "Earth creature",
+      "symbol": "🜃"
+    },
+    "Darkness": {
+      "adjective": "darkness",
+      "creature": "Darkness creature",
+      "symbol": "⛧"
+    },
+    "Light": {
+      "adjective": "light",
+      "creature": "Light creature",
+      "symbol": "✶"
+    },
+    "Acid": {
+      "adjective": "acid",
+      "creature": "Acid creature",
+      "symbol": "🝮"
+    },
+    "Poison": {
+      "adjective": "poison",
+      "creature": "Poison creature",
+      "symbol": "🜍"
+    },
+    "Force": {
+      "adjective": "force",
+      "creature": "Force creature",
+      "symbol": "⥊"
     }
   },
   "vectors": {
@@ -69,20 +84,23 @@ const glyphs = {
       "complexity": 0.25,
       "category": "contact",
       "rangeModifiable": false,
-      "phrase": "on the caster"
+      "phrase": "self",
+      "symbol": "⊙"
     },
     "Touch": {
       "complexity": 0.5,
       "category": "contact",
       "rangeModifiable": false,
-      "phrase": "by touch"
+      "phrase": "touch",
+      "symbol": "⊹"
     },
     "Dart": {
       "complexity": 1,
       "category": "projected",
       "range": "6 hexes",
       "rangeModifiable": true,
-      "phrase": "dart"
+      "phrase": "dart",
+      "symbol": "➶"
     },
     "Sphere": {
       "complexity": 1,
@@ -90,7 +108,8 @@ const glyphs = {
       "radius": "1 hex",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "sphere"
+      "phrase": "sphere",
+      "symbol": "◉"
     },
     "Cube": {
       "complexity": 1,
@@ -98,7 +117,8 @@ const glyphs = {
       "side": "1 hex",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "cube"
+      "phrase": "cube",
+      "symbol": "□"
     },
     "Cylinder": {
       "complexity": 1,
@@ -107,7 +127,8 @@ const glyphs = {
       "length": "2 hexes",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "cylinder"
+      "phrase": "cylinder",
+      "symbol": "⌭"
     },
     "Cone": {
       "complexity": 1,
@@ -116,7 +137,8 @@ const glyphs = {
       "length": "2 hexes",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "cone"
+      "phrase": "cone",
+      "symbol": "∠"
     },
     "Line": {
       "complexity": 1,
@@ -125,7 +147,8 @@ const glyphs = {
       "length": "3 hexes",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "line"
+      "phrase": "line",
+      "symbol": "╱"
     },
     "Circle": {
       "complexity": 1,
@@ -133,7 +156,8 @@ const glyphs = {
       "radius": "1 hex",
       "rangeModifiable": true,
       "persistent": true,
-      "phrase": "circle"
+      "phrase": "circle",
+      "symbol": "◎"
     },
     "Summon": {
       "complexity": 2,
@@ -141,31 +165,37 @@ const glyphs = {
       "duration": "8T",
       "rangeModifiable": false,
       "persistent": true,
-      "phrase": "summon"
+      "phrase": "summon",
+      "symbol": "⟐"
     }
   },
   "modifiers": {
     "+": {
       "kind": "range",
-      "multiplier": 2
+      "multiplier": 2,
+      "symbol": "˃"
     },
     "-": {
       "kind": "range",
-      "multiplier": 0.5
+      "multiplier": 0.5,
+      "symbol": "˂"
     },
     "T": {
       "kind": "duration",
-      "multiplier": 2
+      "multiplier": 2,
+      "symbol": "⧖"
     },
     "A": {
       "kind": "filter",
       "multiplier": 2,
-      "phrase": "that affects allies only"
+      "phrase": "that affects allies only",
+      "symbol": "⊕"
     },
     "E": {
       "kind": "filter",
       "multiplier": 2,
-      "phrase": "that affects enemies only"
+      "phrase": "that affects enemies only",
+      "symbol": "⊖"
     }
   }
 };
@@ -491,48 +521,35 @@ document.addEventListener("DOMContentLoaded", function () {
     jsonOutput.textContent = JSON.stringify(spell, null, 2);
   }
 
-  const runePaths = {
-    Harm: "M0,-25 L9,-6 L24,-6 L12,4 L18,24 L0,11 L-18,24 L-12,4 L-24,-6 L-9,-6 Z",
-    Heal: "M0,-24 C12,-12 12,12 0,24 C-12,12 -12,-12 0,-24 M-16,0 L16,0 M0,-16 L0,16",
-    Hex: "M-22,-18 L22,18 M22,-18 L-22,18 M0,-26 L0,26 M-18,0 L18,0",
-    Bless: "M0,-26 L7,-7 L26,0 L7,7 L0,26 L-7,7 L-26,0 L-7,-7 Z M0,-14 L0,14 M-14,0 L14,0",
-    Neutral: "M0,-24 L21,-12 L21,12 L0,24 L-21,12 L-21,-12 Z M-10,-8 L10,8 M10,-8 L-10,8",
-    Fire: "M0,-28 C16,-12 3,-4 14,9 C21,18 8,28 0,28 C-13,28 -20,17 -13,6 C-7,-3 -4,-8 0,-28",
-    Poison: "M0,-22 C12,-22 22,-12 22,0 C22,12 12,22 0,22 C-12,22 -22,12 -22,0 C-22,-12 -12,-22 0,-22 M-9,-4 L-2,3 L10,-10 M-8,10 L8,10",
-    Force: "M-26,0 L22,0 M9,-13 L25,0 L9,13 M-16,-14 L-4,0 L-16,14",
-    Acid: "M0,-26 L20,-4 L8,24 L-16,20 L-24,-5 Z M-8,2 L8,2 M-3,10 L12,10",
-    Darkness: "M12,-23 C-8,-20 -18,-4 -12,12 C-5,29 15,24 23,10 C13,17 0,12 -3,0 C-6,-12 2,-20 12,-23",
-    Light: "M0,-26 L5,-8 L22,-16 L10,0 L26,5 L8,8 L16,24 L0,12 L-16,24 L-8,8 L-26,5 L-10,0 L-22,-16 L-5,-8 Z",
-    Thunder: "M-18,-23 L10,-23 L-2,-3 L18,-3 L-11,26 L0,5 L-18,5 Z",
-    Lightning: "M-6,-27 L18,-3 L5,-3 L12,27 L-18,0 L-4,0 Z",
-    Cold: "M0,-27 L0,27 M-23,-14 L23,14 M23,-14 L-23,14 M-8,-19 L0,-12 L8,-19 M-8,19 L0,12 L8,19",
-    Earth: "M0,-26 L24,-8 L15,22 L-15,22 L-24,-8 Z M-12,-2 L12,-2 M-6,9 L6,9",
-    Dart: "M-25,4 L14,4 L14,14 L27,0 L14,-14 L14,-4 L-25,-4 Z",
-    Self: "M0,-25 C14,-25 24,-14 24,0 C24,14 14,25 0,25 C-14,25 -24,14 -24,0 C-24,-14 -14,-25 0,-25 M0,-12 C7,-12 12,-7 12,0 C12,7 7,12 0,12 C-7,12 -12,7 -12,0 C-12,-7 -7,-12 0,-12",
-    Touch: "M-22,8 C-10,-16 10,-16 22,8 M-10,8 C-5,17 5,17 10,8 M-22,8 L-26,19 M22,8 L26,19",
-    Sphere: "M0,-25 C14,-25 25,-14 25,0 C25,14 14,25 0,25 C-14,25 -25,14 -25,0 C-25,-14 -14,-25 0,-25 M-25,0 C-10,-9 10,-9 25,0 M-25,0 C-10,9 10,9 25,0",
-    Circle: "M0,-26 C14,-26 26,-14 26,0 C26,14 14,26 0,26 C-14,26 -26,14 -26,0 C-26,-14 -14,-26 0,-26 M0,-16 C9,-16 16,-9 16,0 C16,9 9,16 0,16 C-9,16 -16,9 -16,0 C-16,-9 -9,-16 0,-16",
-    Cube: "M-18,-12 L0,-24 L18,-12 L18,12 L0,24 L-18,12 Z M-18,-12 L0,0 L18,-12 M0,0 L0,24",
-    Cylinder: "M-20,-14 C-20,-24 20,-24 20,-14 L20,14 C20,24 -20,24 -20,14 Z M-20,-14 C-20,-4 20,-4 20,-14 M-20,14 C-20,4 20,4 20,14",
-    Cone: "M0,-26 L25,22 L-25,22 Z M-13,22 C-6,14 6,14 13,22",
-    Line: "M-24,-24 L24,24 M-13,-24 L24,13 M-24,-13 L13,24",
-    Summon: "M0,-28 C17,-24 27,-12 24,5 C21,20 8,28 -8,23 C-23,17 -27,0 -19,-14 C-13,-25 -2,-27 0,-28 M-11,-4 L11,-4 L0,13 Z"
-  };
+  function glyphSymbol(g) {
+    if (glyphs.effects[g.name]) return glyphs.effects[g.name].symbol;
+    if (glyphs.vectors[g.name]) return glyphs.vectors[g.name].symbol;
+    if (glyphs.aspects[g.name]) return glyphs.aspects[g.name].symbol;
+    return "?";
+  }
 
-  function glyphShape(g, x, y, size) {
-    const path = runePaths[g.name] || "M-18,-18 L18,-18 L18,18 L-18,18 Z";
-    const stroke = g.type === "unknown" ? "#e78888" : "#d8b66a";
-    const glow = g.type === "aspect" ? "#9ad7d3" : "#d8b66a";
-    const label = `<text x="${x}" y="${y + size + 18}" text-anchor="middle" font-size="10" fill="#d8c99d" font-family="Georgia, serif">${escapeXml(g.name)}</text>`;
-    const mods = (g.rangeMods || []).concat(g.attachedMods || []).join("");
-    const modText = mods ? `<text x="${x}" y="${y - size - 9}" text-anchor="middle" font-size="13" fill="#9ad7d3" font-family="Georgia, serif">${escapeXml(mods)}</text>` : "";
+  function glyphShape(g, x, y) {
+    const symbol = glyphSymbol(g);
+    const mods = [];
+
+    if (g.rangeMods) {
+      for (const mod of g.rangeMods) mods.push(glyphs.modifiers[mod].symbol);
+    }
+
+    if (g.attachedMods) {
+      for (const mod of g.attachedMods) mods.push(glyphs.modifiers[mod].symbol);
+    }
+
+    const modText = mods.length
+      ? `<text x="${x}" y="${y - 31}" text-anchor="middle" dominant-baseline="middle" class="modifier-rune">${escapeXml(mods.join(""))}</text>`
+      : "";
+
     return `
-      <g transform="translate(${x}, ${y}) scale(${size / 28})">
-        <path d="${path}" fill="none" stroke="${stroke}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="${path}" fill="none" stroke="${glow}" stroke-opacity="0.16" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <g class="glyph-group">
+        <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" class="arcane-rune">${escapeXml(symbol)}</text>
+        ${modText}
+        <text x="${x}" y="${y + 35}" text-anchor="middle" dominant-baseline="middle" class="glyph-label">${escapeXml(g.name)}</text>
       </g>
-      ${modText}
-      ${label}
     `;
   }
 
@@ -599,7 +616,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const angle = -Math.PI / 2 + (2 * Math.PI * i / n);
         const x = cx + Math.cos(angle) * radius;
         const y = cy + Math.sin(angle) * radius;
-        svg += glyphShape(token, x, y, 23);
+        svg += glyphShape(token, x, y);
       });
     }
 
@@ -634,6 +651,17 @@ document.addEventListener("DOMContentLoaded", function () {
     build();
   }
 
+  function getTokenSymbol(token, kind) {
+    if (kind === "modifier") {
+      const key = token.replace(/[()]/g, "");
+      return glyphs.modifiers[key] ? glyphs.modifiers[key].symbol : token;
+    }
+    return (glyphs.effects[token] && glyphs.effects[token].symbol)
+      || (glyphs.vectors[token] && glyphs.vectors[token].symbol)
+      || (glyphs.aspects[token] && glyphs.aspects[token].symbol)
+      || token;
+  }
+
   function buildPalette() {
     const groups = [
       ["Effects", Object.keys(glyphs.effects).map(x => [x, "glyph"])],
@@ -646,7 +674,7 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="palette-group">
         <div class="palette-group-title">${group}</div>
         <div class="chip-row">
-          ${items.map(([label, kind]) => `<span class="glyph-chip" draggable="true" data-kind="${kind}" data-glyph="${label}">${label}</span>`).join("")}
+          ${items.map(([label, kind]) => `<span class="glyph-chip" draggable="true" data-kind="${kind}" data-glyph="${label}"><span class="chip-symbol">${escapeHtml(getTokenSymbol(label, kind))}</span>${label}</span>`).join("")}
         </div>
       </div>
     `).join("");
@@ -703,7 +731,7 @@ document.addEventListener("DOMContentLoaded", function () {
     glyphReference.innerHTML = groups.map(([name, data]) => `
       <div class="ref-card">
         <strong>${name}</strong>
-        <p>${Object.keys(data).join(", ")}</p>
+        <p>${Object.entries(data).map(([k, v]) => `${v.symbol || ""} ${k}`).join(", ")}</p>
       </div>
     `).join("");
   }
