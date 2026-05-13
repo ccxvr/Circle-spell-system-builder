@@ -21,7 +21,7 @@ const glyphs = {
       "symbol": "✧"
     },
     "Neutral": {
-      "complexity": 1,
+      "complexity": 0,
       "verb": "neutral",
       "symbol": "○",
       "notes": "Only effect that may use Summon or Conjure."
