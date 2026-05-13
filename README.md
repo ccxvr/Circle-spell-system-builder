@@ -70,3 +70,20 @@ This version adds:
 - Duration descriptions in seconds for Summon and persistent AoE vectors.
 - A glyph palette with click and drag insertion.
 - Automatic `>` separator insertion when adding non-modifier glyphs after an existing glyph.
+
+
+## v4 GitHub Pages Compatibility
+
+This version removes ES module imports and embeds the glyph data directly into `src/app.js`.
+
+That means GitHub Pages can serve the app as plain static files without a build step and without browser import-path issues.
+
+### Deployment
+
+1. Upload these files to a GitHub repository.
+2. Go to **Settings → Pages**.
+3. Choose **Deploy from a branch**.
+4. Select `main` and `/root`.
+5. Open the GitHub Pages URL.
+
+If the glyph palette does not appear, open the browser console and check for JavaScript errors.
