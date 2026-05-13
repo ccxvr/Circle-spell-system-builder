@@ -93,8 +93,9 @@ svg {
 }
 
 #spellSvg {
-  width: 410px;
-  height: 410px;
+  width: 410px !important;
+  height: 410px !important;
+  max-width: 410px !important;
 }
 
 #summary table { width: 100%; border-collapse: collapse; margin: 12px 0; }
