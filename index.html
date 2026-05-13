@@ -1,42 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WILDER Spell Circle Builder</title>
-  <link rel="stylesheet" href="./src/styles.css" />
+  <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
   <header>
-    <div>
-      <h1>WILDER Spell Circle Builder</h1>
-      <p>Build Concentric Arcana spells, calculate complexity, describe the spell, and export arcane circles as SVG.</p>
-    </div>
+    <h1>WILDER Spell Circle Builder</h1>
+    <p>Build Concentric Arcana spells, calculate complexity, describe them, and export arcane SVG circles.</p>
   </header>
 
   <main>
     <section class="panel editor-panel">
       <h2>Spell Input</h2>
-      <p class="hint">
-        Write one ring per line. Use <code>Ring 1:</code> labels or plain glyph chains.
-        Examples: <code>Harm > Dart+ > Fire</code>, <code>Neutral > Summon(T) > Fire</code>.
-      </p>
+      <p class="hint">Write one ring per line, or click glyphs from the palette. Example: <code>Harm > Dart+ > Fire</code>.</p>
 
       <textarea id="spellInput" spellcheck="false">Ring 1: Harm > Dart > Fire
-Ring 2: Neutral > Summon > Fire</textarea>
+Ring 2: Neutral > Summon(T) > Fire</textarea>
 
       <div class="row">
-        <button id="parseBtn">Build Spell</button>
-        <button id="exportSvgBtn">Download SVG</button>
-        <button id="copyJsonBtn">Copy JSON</button>
+        <button id="parseBtn" type="button">Build Spell</button>
+        <button id="exportSvgBtn" type="button">Download SVG</button>
+        <button id="copyJsonBtn" type="button">Copy JSON</button>
       </div>
 
       <h3>Glyph Palette</h3>
-      <p class="hint">
-        Click or drag glyph chips into the editor. Non-modifier glyphs automatically insert a separator when needed.
-        Modifiers attach to the current vector.
-      </p>
-      <div id="glyphPalette" class="palette"></div>
+      <p class="hint">Click a glyph chip to insert it. Dragging into the text box also works in browsers that support it.</p>
+      <div id="glyphPalette" class="palette">
+        <p class="error">If this message stays visible, JavaScript failed to load.</p>
+      </div>
 
       <h3>Glyph Reference</h3>
       <div id="glyphReference" class="reference"></div>
@@ -58,9 +52,9 @@ Ring 2: Neutral > Summon > Fire</textarea>
   </main>
 
   <footer>
-    <p>Static prototype. Host on GitHub Pages by serving this repository root.</p>
+    <p>Plain static app. No build step. GitHub Pages compatible.</p>
   </footer>
 
-  <script src="./src/app.js"></script>
+  <script src="src/app.js"></script>
 </body>
 </html>
