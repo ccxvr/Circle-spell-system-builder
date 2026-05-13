@@ -414,16 +414,27 @@ if (vector && glyphs.vectors[vector.name]) {
     return filter ? glyphs.modifiers[filter].phrase : "";
   }
 
- const harmDice = {
-  1: "1d4",
-  2: "1d6",
-  3: "1d8",
-  4: "1d10",
-  5: "1d12",
-  6: "1d12+1d4",
-  7: "1d12+1d6",
-  8: "1d12+1d8"
-};
+function getHarmDice(level) {
+
+  const diceSteps = [4, 6, 8, 10, 12];
+
+  const fullD12s = Math.floor((level - 1) / 5);
+  const remainder = (level - 1) % 5;
+
+  let parts = [];
+
+  if (fullD12s > 0) {
+    parts.push(`${fullD12s}d12`);
+  }
+
+  const stepDie = diceSteps[remainder];
+
+  if (stepDie > 0) {
+    parts.push(`1d${stepDie}`);
+  }
+
+  return parts.join("+");
+}
 
 const blessMap = {
   Fire: "Ballistic Skill",
@@ -518,7 +529,7 @@ function getEmpowermentLevel(effect, aspect, previousRings) {
 function mechanicalText(effect, aspect, level) {
 
   if (effect === "Harm") {
-    const dice = harmDice[level] || "1d12+";
+    const dice = getHarmDice(level);
     return `deals ${dice} ${aspect.toLowerCase()} damage`;
   }
 
