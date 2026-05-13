@@ -649,11 +649,15 @@ function mechanicalText(effect, aspect, level) {
     };
   }
 
-  const hasSummon = vectors.some(v => v.name === "Summon");
-  const hasConjure = vectors.some(v => v.name === "Conjure");
-
   if ((hasSummon || hasConjure) && effect.name !== "Neutral") {
-    if (hasSummon) {
+  return {
+    valid: false,
+    useless: false,
+    reason: "Summon and Conjure may only be used with Neutral"
+  };
+}
+
+if (hasSummon) {
   const summonIndex = vectors.findIndex(v => v.name === "Summon");
   const previousVector = vectors[summonIndex - 1];
 
@@ -673,12 +677,6 @@ function mechanicalText(effect, aspect, level) {
     };
   }
 }
-    return {
-      valid: false,
-      useless: false,
-      reason: "Summon and Conjure may only be used with Neutral"
-    };
-  }
     for (let i = 0; i < vectors.length - 1; i++) {
   if (VECTOR_AOE.has(vectors[i].name)) {
     return {
