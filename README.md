@@ -1,23 +1,13 @@
 # WILDER Spell Circle Builder v7 — Mechanical Description Edition
 
-A plain static GitHub Pages-compatible spell builder for the WILDER Concentric Arcana syntax.
+A plain static GitHub Pages-compatible spell builder for the Concentric Arcana syntax.
+You can use the builder at: https://ccxvr.github.io/Circle-spell-system-builder/
 
 ## What changed in v7
 
 - Adds mechanical spell descriptions: damage dice, damage type, Hex resistance, condition levels, Bless bonuses, Heal HP/condition removal, and Summon TL/duration.
 - Adds clearer descriptions for useless Neutral spells and broken/illegal spell clauses.
 - Keeps the Unicode occult/alchemical-style glyph set from v6.
-
-## Deploy to GitHub Pages
-
-1. Create a GitHub repository.
-2. Upload the contents of this folder, not the folder itself.
-3. Go to Settings → Pages.
-4. Source: Deploy from a branch.
-5. Branch: main, folder: /root.
-6. Open the generated Pages URL.
-
-No build step is required.
 
 ## Example
 
