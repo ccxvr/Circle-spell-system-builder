@@ -653,18 +653,47 @@ function mechanicalText(effect, aspect, level) {
   const hasConjure = vectors.some(v => v.name === "Conjure");
 
   if ((hasSummon || hasConjure) && effect.name !== "Neutral") {
+    if (hasSummon) {
+  const summonIndex = vectors.findIndex(v => v.name === "Summon");
+  const previousVector = vectors[summonIndex - 1];
+
+  if (!previousVector || !["Dart", "Touch"].includes(previousVector.name)) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "Summon must be carried by either Dart or Touch"
+    };
+  }
+
+  if (summonIndex !== vectors.length - 1) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "Summon must be the final vector before the Aspect"
+    };
+  }
+}
     return {
       valid: false,
       useless: false,
       reason: "Summon and Conjure may only be used with Neutral"
     };
   }
+    for (let i = 0; i < vectors.length - 1; i++) {
+  if (VECTOR_AOE.has(vectors[i].name)) {
+    return {
+      valid: false,
+      useless: false,
+      reason: `${vectors[i].name} cannot be followed by another vector`
+    };
+  }
+}
 
   if (effect.name === "Neutral" && !hasSummon && !hasConjure) {
     return {
       valid: true,
       useless: true,
-      reason: "Neutral does nothing without Summon or Conjure"
+      reason: "Neutral does nothing useful without Summon or Conjure"
     };
   }
 
@@ -818,10 +847,13 @@ function describeSubspell(subspell, previous, previousRings) {
   const mechanics = mechanicalText(effect.name, aspect.name, level);
 
   if (mainVector.name === "Summon") {
-    const duration = durationPhrase(mainVector, effect.name);
+  const duration = durationPhrase(mainVector, effect.name);
+  const carrierVector = vectors[vectors.length - 2];
 
+  if (carrierVector?.name === "Dart") {
     phrase =
-      `summons a TL ${level} ${aspectAdj} creature ` +
+      `a ${rangeAdjective(carrierVector)}` +
+      `dart that summons a TL ${level} ${aspectAdj} creature ` +
       `${duration}`;
 
     return {
@@ -829,6 +861,27 @@ function describeSubspell(subspell, previous, previousRings) {
       terminalLocation: "the summoned creature"
     };
   }
+
+  if (carrierVector?.name === "Touch") {
+    phrase =
+      `a touch spell that summons a TL ${level} ${aspectAdj} creature ` +
+      `${duration}`;
+
+    return {
+      text: phrase,
+      terminalLocation: "the summoned creature"
+    };
+  }
+
+  phrase =
+    `summons a TL ${level} ${aspectAdj} creature ` +
+    `${duration}`;
+
+  return {
+    text: phrase,
+    terminalLocation: "the summoned creature"
+  };
+}
 
   if (mainVector.name === "Dart") {
     phrase =
