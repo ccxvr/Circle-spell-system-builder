@@ -914,7 +914,7 @@ function describeSpell(spell) {
     const baseRadius = 45;
     const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 78;
 
-    let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
+    let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" width="410" height="410" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
       <defs>
         <radialGradient id="bg" cx="50%" cy="45%" r="65%">
           <stop offset="0%" stop-color="#1a1622"/>
