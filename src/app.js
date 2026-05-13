@@ -393,69 +393,353 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function describeSubspell(subspell, previous) {
-    const effect = subspell.find(t => t.type === "effect");
-    const aspect = [...subspell].reverse().find(t => t.type === "aspect");
-    const vectors = subspell.filter(t => t.type === "vector");
+   const harmDice = {
+  1: "1d4",
+  2: "1d6",
+  3: "1d8",
+  4: "1d10",
+  5: "1d12",
+  6: "1d12+1d4",
+  7: "1d12+1d6",
+  8: "1d12+1d8"
+};
 
-    if (!effect || !aspect) return "an incomplete arcane clause";
+const blessMap = {
+  Fire: "Ballistic Skill",
+  Poison: "Dex",
+  Force: "Str",
+  Acid: "Wit",
+  Darkness: "Agi",
+  Light: "Intelligence",
+  Thunder: "Presence",
+  Lightning: "Agi",
+  Cold: "WP",
+  Earth: "Melee Skill"
+};
 
-    const aspectData = glyphs.aspects[aspect.name] || {};
-    const aspectAdj = aspectData.adjective || aspect.name.toLowerCase();
-    const mainVector = vectors[vectors.length - 1];
-    const firstVector = vectors[0];
-    let phrase = "";
+const hexMap = {
+  Fire: {
+    condition: "Blaze",
+    resist: "Endurance"
+  },
 
-    if (mainVector && mainVector.name === "Summon") {
-      const creature = aspectData.creature || `${aspect.name} creature`;
-      const loc = previous && previous.terminalLocation ? ` at ${previous.terminalLocation}` : "";
-      const dur = durationPhrase(mainVector);
-      phrase = `summons ${articleSafe(creature)}${loc} ${dur}`.replace(/\s+/g, " ").trim();
-      return { text: phrase, terminalLocation: "the summoned creature", terminalKind: "summon" };
-    }
+  Poison: {
+    condition: "Poisoned",
+    resist: "Endurance"
+  },
 
-    if (effect.name === "Neutral") {
-      phrase = `creates a neutral ${aspectAdj} manifestation`;
-    } else {
-      const effectWord = (glyphs.effects[effect.name] && glyphs.effects[effect.name].verb) || effect.name.toLowerCase();
-      if (!mainVector) {
-        phrase = `empowers later ${aspectAdj} ${effectWord} manifestations`;
-      } else if (mainVector.name === "Dart") {
-        phrase = `a ${effectWord} ${rangeAdjective(mainVector)}${aspectAdj} dart`;
-      } else if (mainVector.name === "Touch") {
-        phrase = `a ${effectWord} ${aspectAdj} touch`;
-      } else if (mainVector.name === "Self") {
-        phrase = `a ${effectWord} ${aspectAdj} effect on the caster`;
-      } else {
-        const shape = (glyphs.vectors[mainVector.name] && glyphs.vectors[mainVector.name].phrase) || mainVector.name.toLowerCase();
-        const loc = previous && previous.terminalLocation ? ` at ${previous.terminalLocation}` : "";
-        const dur = durationPhrase(mainVector);
-        phrase = `a ${effectWord} ${rangeAdjective(mainVector)}${aspectAdj} ${shape}${loc}`;
-        if (dur) phrase += ` ${dur}`;
+  Force: {
+    condition: "Push",
+    resist: "Athletics"
+  },
+
+  Acid: {
+    condition: "Armor DR reduction",
+    resist: "Dodge"
+  },
+
+  Darkness: {
+    condition: "Fear",
+    resist: "Cool"
+  },
+
+  Light: {
+    condition: "Blind",
+    resist: "Endurance"
+  },
+
+  Thunder: {
+    condition: "Deafened",
+    resist: "Endurance"
+  },
+
+  Lightning: {
+    condition: "Stunned",
+    resist: "Endurance"
+  },
+
+  Cold: {
+    condition: "Slow",
+    resist: "Endurance"
+  },
+
+  Earth: {
+    condition: "Bleed",
+    resist: "Endurance"
+  }
+};
+
+function getEmpowermentLevel(effect, aspect, previousRings) {
+  let level = 1;
+
+  for (const ring of previousRings) {
+    for (const sub of ring.subspells) {
+
+      const eff = sub.find(t => t.type === "effect");
+      const asp = sub.find(t => t.type === "aspect");
+      const vec = sub.find(t => t.type === "vector");
+
+      if (
+        eff &&
+        asp &&
+        !vec &&
+        eff.name === effect &&
+        asp.name === aspect
+      ) {
+        level += 1;
       }
     }
+  }
 
-    if (vectors.length > 1 && firstVector && firstVector.name === "Dart" && mainVector && mainVector.name !== "Dart") {
-      phrase += ` carried by a ${rangeAdjective(firstVector)}dart`;
+  return level;
+}
+
+function mechanicalText(effect, aspect, level) {
+
+  if (effect === "Harm") {
+    const dice = harmDice[level] || "1d12+";
+    return `deals ${dice} ${aspect.toLowerCase()} damage`;
+  }
+
+  if (effect === "Bless") {
+    return `gives a +${level * 5} ${blessMap[aspect]} bonus`;
+  }
+
+  if (effect === "Hex") {
+
+    const data = hexMap[aspect];
+
+    return `forces the target to make a -${level * 5} ${data.resist} check or receive ${level} ${data.condition} condition`;
+  }
+
+  if (effect === "Heal") {
+
+    const data = hexMap[aspect];
+
+    return `heals for ${level * 2} HP and removes ${level} ${data.condition} condition`;
+  }
+
+  return "does nothing meaningful";
+}
+
+function describeSubspell(subspell, previous, previousRings) {
+
+  const effect = subspell.find(t => t.type === "effect");
+  const aspect = [...subspell].reverse().find(t => t.type === "aspect");
+  const vectors = subspell.filter(t => t.type === "vector");
+
+  if (!effect || !aspect) {
+    return {
+      text: "a broken dangerous spell that should not work",
+      terminalLocation: "its endpoint"
+    };
+  }
+
+  const aspectAdj =
+    glyphs.aspects[aspect.name]?.adjective ||
+    aspect.name.toLowerCase();
+
+  const mainVector = vectors[vectors.length - 1];
+  const firstVector = vectors[0];
+
+  if (
+    vectors.some(v => v.name === "Summon") &&
+    effect.name !== "Neutral"
+  ) {
+    return {
+      text: "a broken dangerous spell that should not work",
+      terminalLocation: "its endpoint"
+    };
+  }
+
+  if (
+    effect.name === "Neutral" &&
+    !vectors.some(v => v.name === "Summon")
+  ) {
+
+    return {
+      text: `a useless ${aspectAdj} spell that does nothing meaningful`,
+      terminalLocation: "its endpoint"
+    };
+  }
+
+  const level = getEmpowermentLevel(
+    effect.name,
+    aspect.name,
+    previousRings
+  );
+
+  let phrase = "";
+
+  if (!mainVector) {
+
+    phrase =
+      `empowers later ${aspectAdj} ` +
+      `${effect.name.toLowerCase()} manifestations`;
+
+    return {
+      text: phrase,
+      terminalLocation: previous?.terminalLocation || "its endpoint"
+    };
+  }
+
+  const mechanics =
+    mechanicalText(effect.name, aspect.name, level);
+
+  if (mainVector.name === "Summon") {
+
+    const duration =
+      durationPhrase(mainVector);
+
+    phrase =
+      `summons a TL ${level} ${aspectAdj} creature ` +
+      `${duration}`;
+
+    return {
+      text: phrase,
+      terminalLocation: "the summoned creature"
+    };
+  }
+
+  if (mainVector.name === "Dart") {
+
+    phrase =
+      `a ${effect.name.toLowerCase()} ` +
+      `${aspectAdj} dart that ${mechanics}`;
+  }
+
+  else if (mainVector.name === "Touch") {
+
+    phrase =
+      `a ${effect.name.toLowerCase()} ` +
+      `${aspectAdj} touch that ${mechanics}`;
+  }
+
+  else if (mainVector.name === "Self") {
+
+    phrase =
+      `a ${effect.name.toLowerCase()} ` +
+      `${aspectAdj} effect on the caster ` +
+      `that ${mechanics}`;
+  }
+
+  else {
+
+    const shape =
+      glyphs.vectors[mainVector.name]?.phrase ||
+      mainVector.name.toLowerCase();
+
+    const duration =
+      durationPhrase(mainVector);
+
+    phrase =
+      `a ${effect.name.toLowerCase()} ` +
+      `${aspectAdj} ${shape}`;
+
+    if (duration) {
+      phrase += ` ${duration}`;
     }
 
-    const fPhrase = vectors.map(filterPhrase).find(Boolean);
-    if (fPhrase) phrase += ` ${fPhrase}`;
-
-    let terminalLocation = "its endpoint";
-    if (mainVector && mainVector.name === "Dart") terminalLocation = "the impact location";
-    else if (mainVector && VECTOR_AOE.has(mainVector.name)) terminalLocation = `the ${mainVector.name.toLowerCase()}'s area`;
-    else if (mainVector && mainVector.name === "Touch") terminalLocation = "the touched target";
-    else if (mainVector && mainVector.name === "Self") terminalLocation = "the caster";
-
-    return { text: phrase.replace(/\s+/g, " ").trim(), terminalLocation, terminalKind: mainVector ? mainVector.name : "empowerment" };
+    phrase += ` that ${mechanics}`;
   }
 
-  function articleSafe(nounPhrase) {
-    const cleaned = nounPhrase.trim();
-    const article = /^[aeiou]/i.test(cleaned) ? "an" : "a";
-    return `${article} ${cleaned}`;
+  if (
+    vectors.length > 1 &&
+    firstVector &&
+    firstVector.name === "Dart" &&
+    mainVector.name !== "Dart"
+  ) {
+
+    phrase +=
+      ` carried by a dart`;
   }
 
+  const filter =
+    vectors
+      .map(filterPhrase)
+      .find(Boolean);
+
+  if (filter) {
+    phrase += ` ${filter}`;
+  }
+
+  let terminalLocation = "its endpoint";
+
+  if (mainVector.name === "Dart") {
+    terminalLocation = "the impact location";
+  }
+
+  else if (
+    VECTOR_AOE.has(mainVector.name)
+  ) {
+    terminalLocation =
+      `the ${mainVector.name.toLowerCase()} area`;
+  }
+
+  else if (
+    mainVector.name === "Touch"
+  ) {
+    terminalLocation = "the touched target";
+  }
+
+  else if (
+    mainVector.name === "Self"
+  ) {
+    terminalLocation = "the caster";
+  }
+
+  return {
+    text: phrase,
+    terminalLocation
+  };
+}
+
+function describeSpell(spell) {
+
+  const pieces = [];
+  let previous = null;
+
+  for (let i = 0; i < spell.rings.length; i++) {
+
+    const ring =
+      spell.rings[i];
+
+    const previousRings =
+      spell.rings.slice(0, i);
+
+    for (const sub of ring.subspells) {
+
+      const desc =
+        describeSubspell(
+          sub,
+          previous,
+          previousRings
+        );
+
+      pieces.push(desc.text);
+
+      previous = desc;
+    }
+  }
+
+  if (!pieces.length) {
+    return "No complete spell clauses detected.";
+  }
+
+  let sentence = pieces[0];
+
+  for (let i = 1; i < pieces.length; i++) {
+
+    sentence +=
+      `, then creates ${pieces[i]}`;
+  }
+
+  sentence =
+    sentence.charAt(0).toUpperCase() +
+    sentence.slice(1);
+
+  return sentence + ".";
+}
   function describeSpell(spell) {
     const pieces = [];
     let previous = null;
