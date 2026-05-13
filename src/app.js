@@ -24,7 +24,7 @@ const glyphs = {
       "complexity": 1,
       "verb": "neutral",
       "symbol": "○",
-      "notes": "Only effect that may use Summon."
+      "notes": "Only effect that may use Summon or Conjure."
     }
   },
   "aspects": {
@@ -667,6 +667,30 @@ function mechanicalText(effect, aspect, level) {
     }
   }
 
+    if (vectors.some(v => v.name === "Target")) {
+  if (effect.name !== "Bless" && effect.name !== "Hex") {
+    return {
+      valid: false,
+      useless: false,
+      reason: "Target may only be used with Bless or Hex"
+    };
+  }
+
+  const previousSubspell = subspell.previousSubspell;
+
+  const previousWasDart =
+    previousSubspell &&
+    previousSubspell.some(t => t.type === "vector" && t.name === "Dart");
+
+  if (!previousWasDart) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "Target may only be used after a previous Dart subspell"
+    };
+  }
+}
+
   for (const vector of vectors) {
     const tCount = (vector.attachedMods || []).filter(m => m === "T").length;
     if (!tCount) continue;
@@ -906,30 +930,27 @@ function describeSubspell(subspell, previous, previousRings) {
 }
 
 function describeSpell(spell) {
-
   const pieces = [];
   let previous = null;
+  let previousSubspell = null;
 
   for (let i = 0; i < spell.rings.length; i++) {
-
-    const ring =
-      spell.rings[i];
-
-    const previousRings =
-      spell.rings.slice(0, i);
+    const ring = spell.rings[i];
+    const previousRings = spell.rings.slice(0, i);
 
     for (const sub of ring.subspells) {
+      sub.previousSubspell = previousSubspell;
 
-      const desc =
-        describeSubspell(
-          sub,
-          previous,
-          previousRings
-        );
+      const desc = describeSubspell(
+        sub,
+        previous,
+        previousRings
+      );
 
       pieces.push(desc.text);
 
       previous = desc;
+      previousSubspell = sub;
     }
   }
 
@@ -940,9 +961,7 @@ function describeSpell(spell) {
   let sentence = pieces[0];
 
   for (let i = 1; i < pieces.length; i++) {
-
-    sentence +=
-      `, then creates ${pieces[i]}`;
+    sentence += `, then creates ${pieces[i]}`;
   }
 
   sentence =
