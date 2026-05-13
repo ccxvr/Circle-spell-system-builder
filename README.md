@@ -1,6 +1,8 @@
 # WILDER Spell Circle Builder v6 — Unicode Rune Edition
 
-A plain static GitHub Pages-compatible spell builder for the WILDER Concentric Arcana syntax.
+A plain static GitHub Pages-compatible spell builder for the Concentric Arcana syntax.
+
+You can use the spell builder at: https://ccxvr.github.io/Circle-spell-system-builder/
 
 ## What changed in v6
 
@@ -8,17 +10,6 @@ A plain static GitHub Pages-compatible spell builder for the WILDER Concentric A
 - Glyphs are styled through CSS instead of hardcoded path drawings.
 - Palette chips show both glyph symbol and syntax name.
 - Easier to edit symbols directly in the `glyphs` object in `src/app.js`.
-
-## Deploy to GitHub Pages
-
-1. Create a GitHub repository.
-2. Upload the contents of this folder, not the folder itself.
-3. Go to Settings → Pages.
-4. Source: Deploy from a branch.
-5. Branch: main, folder: /root.
-6. Open the generated Pages URL.
-
-No build step is required.
 
 ## Example
 
