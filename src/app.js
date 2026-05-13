@@ -414,11 +414,6 @@ if (vector && glyphs.vectors[vector.name]) {
     return `that lasts for ${duration}T`;
   }
 
-  if (vector.name === "Conjure") {
-    if (!tCount) return "that lasts for 8T";
-    return `that lasts for ${8 + (tCount * 3)}T`;
-  }
-
   if (VECTOR_AOE.has(vector.name)) {
     if (!tCount) return "";
     return `that persists for ${tCount * 3}T`;
@@ -433,20 +428,6 @@ if (vector && glyphs.vectors[vector.name]) {
 
   return "";
 }
-
-    if (vector.name === "Summon") {
-      const seconds = 8 * Math.pow(2, tCount);
-      return `that lasts for ${seconds} seconds`;
-    }
-
-    if (VECTOR_AOE.has(vector.name)) {
-      const seconds = 3 * tCount;
-      return `that lasts for ${seconds} seconds`;
-    }
-
-    return "that lasts longer than normal";
-  }
-
   function filterPhrase(vector) {
     const filter = (vector.attachedMods || []).find(m => glyphs.modifiers[m] && glyphs.modifiers[m].kind === "filter");
     return filter ? glyphs.modifiers[filter].phrase : "";
@@ -708,19 +689,18 @@ function mechanicalText(effect, aspect, level) {
 }
 
 function describeSubspell(subspell, previous, previousRings) {
-
   const effect = subspell.find(t => t.type === "effect");
   const aspect = [...subspell].reverse().find(t => t.type === "aspect");
   const vectors = subspell.filter(t => t.type === "vector");
 
   const validation = validateSubspell(subspell);
 
-if (!validation.valid) {
-  return {
-    text: `a broken dangerous spell that should not work (${validation.reason})`,
-    terminalLocation: "its endpoint"
-  };
-}
+  if (!validation.valid) {
+    return {
+      text: `a broken dangerous spell that should not work (${validation.reason})`,
+      terminalLocation: "its endpoint"
+    };
+  }
 
   if (!effect || !aspect) {
     return {
@@ -736,60 +716,26 @@ if (!validation.valid) {
   const mainVector = vectors[vectors.length - 1];
   const firstVector = vectors[0];
 
-  if (
-    vectors.some(v => v.name === "Summon") &&
-    effect.name !== "Neutral"
-  ) {
+  if (validation.useless) {
     return {
-      text: "a broken dangerous spell that should not work",
+      text: `a useless ${aspectAdj} spell that does nothing meaningful`,
       terminalLocation: "its endpoint"
     };
   }
 
-  if (vectors.some(v => v.name === "Conjure")) {
-  const areaVector = vectors.find((v, idx) =>
-    idx > vectors.findIndex(x => x.name === "Conjure") &&
-    VECTOR_AOE.has(v.name)
+  let level = getEmpowermentLevel(
+    effect.name,
+    aspect.name,
+    previousRings
   );
 
-  const duration = durationPhrase(areaVector || mainVector, effect.name);
-  phrase = conjureText(aspect.name, level);
-
-  if (areaVector) {
-    phrase += ` in a ${areaVector.name.toLowerCase()} area`;
+  if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
+    level += 1;
   }
-
-  if (duration) {
-    phrase += ` ${duration}`;
-  }
-
-  return {
-    text: phrase,
-    terminalLocation: areaVector ? `the ${areaVector.name.toLowerCase()} area` : "its endpoint"
-  };
-}
-  
-if (validation.useless) {
-  return {
-    text: `a useless ${aspectAdj} spell that does nothing meaningful`,
-    terminalLocation: "its endpoint"
-  };
-}
-
-  let level = getEmpowermentLevel(
-  effect.name,
-  aspect.name,
-  previousRings
-);
-
-if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
-  level += 1;
-}
 
   let phrase = "";
 
   if (!mainVector) {
-
     phrase =
       `empowers later ${aspectAdj} ` +
       `${effect.name.toLowerCase()} manifestations`;
@@ -800,13 +746,33 @@ if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
     };
   }
 
-  const mechanics =
-    mechanicalText(effect.name, aspect.name, level);
+  if (vectors.some(v => v.name === "Conjure")) {
+    const conjureIndex = vectors.findIndex(v => v.name === "Conjure");
+    const areaVector = vectors.find((v, idx) =>
+      idx > conjureIndex && VECTOR_AOE.has(v.name)
+    );
+
+    const duration = areaVector ? durationPhrase(areaVector, effect.name) : "";
+    phrase = conjureText(aspect.name, level);
+
+    if (areaVector) {
+      phrase += ` in a ${areaVector.name.toLowerCase()} area`;
+    }
+
+    if (duration) {
+      phrase += ` ${duration}`;
+    }
+
+    return {
+      text: phrase,
+      terminalLocation: areaVector ? `the ${areaVector.name.toLowerCase()} area` : "its endpoint"
+    };
+  }
+
+  const mechanics = mechanicalText(effect.name, aspect.name, level);
 
   if (mainVector.name === "Summon") {
-
-    const duration =
-      durationPhrase(mainVector, effect.name),
+    const duration = durationPhrase(mainVector, effect.name);
 
     phrase =
       `summons a TL ${level} ${aspectAdj} creature ` +
@@ -819,7 +785,6 @@ if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
   }
 
   if (mainVector.name === "Dart") {
-
     phrase =
       `a ${effect.name.toLowerCase()} ` +
       `${rangeAdjective(mainVector)}` +
@@ -827,28 +792,53 @@ if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
   }
 
   else if (mainVector.name === "Touch") {
+    const duration = durationPhrase(mainVector, effect.name);
 
     phrase =
       `a ${effect.name.toLowerCase()} ` +
-      `${aspectAdj} touch that ${mechanics}`;
+      `${aspectAdj} touch`;
+
+    if (duration) {
+      phrase += ` ${duration}`;
+    }
+
+    phrase += ` that ${mechanics}`;
   }
 
   else if (mainVector.name === "Self") {
+    const duration = durationPhrase(mainVector, effect.name);
 
     phrase =
       `a ${effect.name.toLowerCase()} ` +
-      `${aspectAdj} effect on the caster ` +
-      `that ${mechanics}`;
+      `${aspectAdj} effect on the caster`;
+
+    if (duration) {
+      phrase += ` ${duration}`;
+    }
+
+    phrase += ` that ${mechanics}`;
+  }
+
+  else if (mainVector.name === "Target") {
+    const duration = durationPhrase(mainVector, effect.name);
+
+    phrase =
+      `a ${effect.name.toLowerCase()} ` +
+      `${aspectAdj} effect on the target`;
+
+    if (duration) {
+      phrase += ` ${duration}`;
+    }
+
+    phrase += ` that ${mechanics}`;
   }
 
   else {
-
     const shape =
       glyphs.vectors[mainVector.name]?.phrase ||
       mainVector.name.toLowerCase();
 
-    const duration =
-      durationPhrase(mainVector, effect.name);
+    const duration = durationPhrase(mainVector, effect.name);
 
     phrase =
       `a ${effect.name.toLowerCase()} ` +
@@ -867,9 +857,7 @@ if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
     firstVector.name === "Dart" &&
     mainVector.name !== "Dart"
   ) {
-
-    phrase +=
-      ` carried by a dart`;
+    phrase += ` carried by a dart`;
   }
 
   const filter =
@@ -887,23 +875,20 @@ if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
     terminalLocation = "the impact location";
   }
 
-  else if (
-    VECTOR_AOE.has(mainVector.name)
-  ) {
-    terminalLocation =
-      `the ${mainVector.name.toLowerCase()} area`;
+  else if (VECTOR_AOE.has(mainVector.name)) {
+    terminalLocation = `the ${mainVector.name.toLowerCase()} area`;
   }
 
-  else if (
-    mainVector.name === "Touch"
-  ) {
+  else if (mainVector.name === "Touch") {
     terminalLocation = "the touched target";
   }
 
-  else if (
-    mainVector.name === "Self"
-  ) {
+  else if (mainVector.name === "Self") {
     terminalLocation = "the caster";
+  }
+
+  else if (mainVector.name === "Target") {
+    terminalLocation = "the target";
   }
 
   return {
