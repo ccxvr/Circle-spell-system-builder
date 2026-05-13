@@ -223,15 +223,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return text.replace(/→/g, ">").split(">").map(t => t.trim()).filter(Boolean);
   }
 
-  function parseVectorToken(token) {
-    const match = token.match(/^([A-Za-z]+)([+\-]*)(?:\(([A-Z]+)\))?$/);
-    if (!match) return null;
-    return {
-      name: match[1],
-      rangeMods: match[2] ? match[2].split("") : [],
-      attachedMods: match[3] ? match[3].split("") : []
-    };
-  }
+  function parseGlyphToken(token) {
+  const match = token.match(/^([A-Za-z]+)([+\-]*)(?:\(([A-Z]+)\))?$/);
+  if (!match) return null;
+
+  return {
+    name: match[1],
+    rangeMods: match[2] ? match[2].split("") : [],
+    attachedMods: match[3] ? match[3].split("") : []
+  };
+}
 
   function parseSpell(text) {
     const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
@@ -252,8 +253,29 @@ document.addEventListener("DOMContentLoaded", function () {
       if (glyphs.effects[compact]) return { raw: token, name: compact, type: "effect", complexity: glyphs.effects[compact].complexity };
       if (glyphs.aspects[compact]) return { raw: token, name: compact, type: "aspect", complexity: 1 };
 
-      const vector = parseVectorToken(compact);
-      if (vector && glyphs.vectors[vector.name]) {
+     const parsed = parseGlyphToken(compact);
+
+if (
+  parsed &&
+  !glyphs.vectors[parsed.name] &&
+  (
+    parsed.rangeMods.length > 0 ||
+    parsed.attachedMods.length > 0
+  )
+) {
+  return {
+    raw: token,
+    name: parsed.name,
+    type: "unknown",
+    complexity: 1,
+    legal: false,
+    notes: [`${parsed.name} cannot take modifiers because it is not a vector.`]
+  };
+}
+
+const vector = parsed;
+
+if (vector && glyphs.vectors[vector.name]) {
         let base = glyphs.vectors[vector.name].complexity;
         let legal = true;
         const notes = [];
@@ -520,12 +542,88 @@ function mechanicalText(effect, aspect, level) {
 
   return "does nothing meaningful";
 }
+  function validateSubspell(subspell) {
+  const effect = subspell.find(t => t.type === "effect");
+  const aspect = [...subspell].reverse().find(t => t.type === "aspect");
+  const vectors = subspell.filter(t => t.type === "vector");
+  const unknown = subspell.find(t => t.type === "unknown");
+  const illegalVector = vectors.find(v => v.legal === false);
+
+  if (unknown) {
+    return {
+      valid: false,
+      useless: false,
+      reason: unknown.notes?.join(" ") || "contains an invalid glyph"
+    };
+  }
+
+  if (illegalVector) {
+    return {
+      valid: false,
+      useless: false,
+      reason: illegalVector.notes?.join(" ") || "contains an illegal vector modifier"
+    };
+  }
+
+  if (!aspect) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "has no closing aspect"
+    };
+  }
+
+  if (!effect) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "has no opening effect"
+    };
+  }
+
+  if (
+    vectors.some(v => v.name === "Summon") &&
+    effect.name !== "Neutral"
+  ) {
+    return {
+      valid: false,
+      useless: false,
+      reason: "Summon may only be used with Neutral"
+    };
+  }
+
+  if (
+    effect.name === "Neutral" &&
+    !vectors.some(v => v.name === "Summon")
+  ) {
+    return {
+      valid: true,
+      useless: true,
+      reason: "Neutral does nothing without Summon"
+    };
+  }
+
+  return {
+    valid: true,
+    useless: false,
+    reason: ""
+  };
+}
 
 function describeSubspell(subspell, previous, previousRings) {
 
   const effect = subspell.find(t => t.type === "effect");
   const aspect = [...subspell].reverse().find(t => t.type === "aspect");
   const vectors = subspell.filter(t => t.type === "vector");
+
+  const validation = validateSubspell(subspell);
+
+if (!validation.valid) {
+  return {
+    text: `a broken dangerous spell that should not work (${validation.reason})`,
+    terminalLocation: "its endpoint"
+  };
+}
 
   if (!effect || !aspect) {
     return {
@@ -551,16 +649,12 @@ function describeSubspell(subspell, previous, previousRings) {
     };
   }
 
-  if (
-    effect.name === "Neutral" &&
-    !vectors.some(v => v.name === "Summon")
-  ) {
-
-    return {
-      text: `a useless ${aspectAdj} spell that does nothing meaningful`,
-      terminalLocation: "its endpoint"
-    };
-  }
+if (validation.useless) {
+  return {
+    text: `a useless ${aspectAdj} spell that does nothing meaningful`,
+    terminalLocation: "its endpoint"
+  };
+}
 
   const level = getEmpowermentLevel(
     effect.name,
