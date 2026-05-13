@@ -943,13 +943,55 @@ function describeSubspell(subspell, previous, previousRings) {
   };
 }
 
+function isStandardEmpowerment(subspell) {
+  const effect = subspell.find(t => t.type === "effect");
+  const aspect = subspell.find(t => t.type === "aspect");
+  const vectors = subspell.filter(t => t.type === "vector");
+
+  return Boolean(effect && aspect && vectors.length === 0);
+}
+
+function validateRingSyntax(ring) {
+  const empowerments = ring.subspells
+    .map((subspell, index) => ({ subspell, index }))
+    .filter(item => isStandardEmpowerment(item.subspell));
+
+  if (empowerments.length > 1) {
+    return {
+      valid: false,
+      reason: `Ring ${ring.level} has more than one standard empowerment`
+    };
+  }
+
+  if (
+    empowerments.length === 1 &&
+    empowerments[0].index !== ring.subspells.length - 1
+  ) {
+    return {
+      valid: false,
+      reason: `Ring ${ring.level} has a standard empowerment before the end of the ring`
+    };
+  }
+
+  return {
+    valid: true,
+    reason: ""
+  };
+}
+  
 function getFatalSpellError(spell) {
   for (const ring of spell.rings) {
     if (ring.glyphCount > ring.glyphLimit) {
       return `broken spell: Ring ${ring.level} exceeds maximum glyph count (${ring.glyphCount}/${ring.glyphLimit})`;
     }
   }
+for (const ring of spell.rings) {
+  const ringSyntax = validateRingSyntax(ring);
 
+  if (!ringSyntax.valid) {
+    return `broken spell: ${ringSyntax.reason}`;
+  }
+}
   let previousSubspell = null;
 
   for (const ring of spell.rings) {
