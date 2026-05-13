@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WILDER Spell Circle Builder</title>
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>WILDER Spell Circle Builder</h1>
+      <p>Build Concentric Arcana spells, calculate complexity, and export spell circles as SVG.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel editor-panel">
+      <h2>Spell Input</h2>
+      <p class="hint">
+        Write one ring per line. Use <code>Ring 1:</code> labels or just enter glyph chains.
+        Examples: <code>Harm > Dart+ > Fire</code>, <code>Neutral > Summon(T) > Fire</code>.
+      </p>
+
+      <textarea id="spellInput" spellcheck="false">Ring 1: Harm > Fire
+Ring 2: Harm > Dart > Sphere > Fire</textarea>
+
+      <div class="row">
+        <button id="parseBtn">Build Spell</button>
+        <button id="exportSvgBtn">Download SVG</button>
+        <button id="copyJsonBtn">Copy JSON</button>
+      </div>
+
+      <h3>Glyph Reference</h3>
+      <div id="glyphReference" class="reference"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Spell Circle</h2>
+      <div id="circleMount" class="circle-mount"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Rules Output</h2>
+      <div id="summary"></div>
+      <pre id="jsonOutput"></pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>Static prototype. Host on GitHub Pages by serving this repository root.</p>
+  </footer>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
