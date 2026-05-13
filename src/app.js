@@ -943,7 +943,39 @@ function describeSubspell(subspell, previous, previousRings) {
   };
 }
 
+function getFatalSpellError(spell) {
+  for (const ring of spell.rings) {
+    if (ring.glyphCount > ring.glyphLimit) {
+      return `broken spell: Ring ${ring.level} exceeds maximum glyph count (${ring.glyphCount}/${ring.glyphLimit})`;
+    }
+  }
+
+  let previousSubspell = null;
+
+  for (const ring of spell.rings) {
+    for (const sub of ring.subspells) {
+      sub.previousSubspell = previousSubspell;
+
+      const validation = validateSubspell(sub);
+
+      if (!validation.valid) {
+        return `broken spell: Ring ${ring.level} contains an invalid subspell (${validation.reason})`;
+      }
+
+      previousSubspell = sub;
+    }
+  }
+
+  return null;
+}
+  
 function describeSpell(spell) {
+  const fatalError = getFatalSpellError(spell);
+
+  if (fatalError) {
+    return fatalError + ".";
+  }
+
   const pieces = [];
   let previous = null;
   let previousSubspell = null;
