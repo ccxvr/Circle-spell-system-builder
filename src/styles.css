@@ -179,3 +179,56 @@ footer {
   main { grid-template-columns: 1fr; }
   .editor-panel { grid-row: auto; }
 }
+
+
+.palette {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.palette-group {
+  border: 1px solid rgba(216, 182, 106, 0.22);
+  background: rgba(10, 8, 14, 0.54);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.palette-group-title {
+  color: #f4db9d;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.glyph-chip {
+  user-select: none;
+  cursor: grab;
+  border: 1px solid rgba(216, 182, 106, 0.38);
+  color: #f8e9c4;
+  background: linear-gradient(180deg, rgba(62, 45, 20, 0.72), rgba(22, 16, 11, 0.86));
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 13px;
+}
+
+.glyph-chip:hover {
+  border-color: rgba(154, 215, 211, 0.7);
+  color: #d8ffff;
+}
+
+.glyph-chip:active {
+  cursor: grabbing;
+}
+
+.drop-active {
+  outline: 2px dashed rgba(154, 215, 211, 0.65);
+  outline-offset: 4px;
+}

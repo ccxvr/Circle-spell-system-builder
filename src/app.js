@@ -8,22 +8,19 @@ const circleMount = document.querySelector("#circleMount");
 const summary = document.querySelector("#summary");
 const jsonOutput = document.querySelector("#jsonOutput");
 const glyphReference = document.querySelector("#glyphReference");
+const glyphPalette = document.querySelector("#glyphPalette");
 const spellDescription = document.querySelector("#spellDescription");
 
 let currentSpell = null;
 
+const VECTOR_AOE = new Set(["Sphere", "Cube", "Cylinder", "Cone", "Line", "Circle"]);
+
 function normalizeToken(raw) {
-  return raw.trim()
-    .replace(/→/g, ">")
-    .replace(/\s+/g, "");
+  return raw.trim().replace(/→/g, ">").replace(/\s+/g, "");
 }
 
 function splitGlyphChain(text) {
-  return text
-    .replace(/→/g, ">")
-    .split(">")
-    .map(t => t.trim())
-    .filter(Boolean);
+  return text.replace(/→/g, ">").split(">").map(t => t.trim()).filter(Boolean);
 }
 
 function parseVectorToken(token) {
@@ -141,6 +138,59 @@ function complexityFromLoad(load) {
   return Math.ceil(Math.log2(load / 4));
 }
 
+function rangeAdjective(vector) {
+  const plus = (vector.rangeMods || []).filter(m => m === "+").length;
+  const minus = (vector.rangeMods || []).filter(m => m === "-").length;
+  if (plus <= 0 && minus <= 0) return "";
+
+  if (plus > 0) {
+    if (vector.name === "Dart") {
+      if (plus === 1) return "long range ";
+      if (plus === 2) return "very long range ";
+      return "extremely long range ";
+    }
+    if (VECTOR_AOE.has(vector.name)) {
+      if (plus === 1) return "large ";
+      if (plus === 2) return "huge ";
+      return "massive ";
+    }
+    return "extended ";
+  }
+
+  if (minus > 0) {
+    if (vector.name === "Dart") return "short range ";
+    if (VECTOR_AOE.has(vector.name)) return "small ";
+    return "reduced ";
+  }
+
+  return "";
+}
+
+function durationPhrase(vector) {
+  const tCount = (vector.attachedMods || []).filter(m => m === "T").length;
+  if (!tCount) {
+    if (vector.name === "Summon") return "that lasts for 8 seconds";
+    return "";
+  }
+
+  if (vector.name === "Summon") {
+    const seconds = 8 * Math.pow(2, tCount);
+    return `that lasts for ${seconds} seconds`;
+  }
+
+  if (VECTOR_AOE.has(vector.name)) {
+    const seconds = 3 * tCount;
+    return `that lasts for ${seconds} seconds`;
+  }
+
+  return "that lasts longer than normal";
+}
+
+function filterPhrase(vector) {
+  const filter = (vector.attachedMods || []).find(m => glyphs.modifiers[m]?.kind === "filter");
+  return filter ? glyphs.modifiers[filter].phrase : "";
+}
+
 function describeSubspell(subspell, previous) {
   const effect = subspell.find(t => t.type === "effect");
   const aspect = [...subspell].reverse().find(t => t.type === "aspect");
@@ -153,21 +203,14 @@ function describeSubspell(subspell, previous) {
   const mainVector = vectors[vectors.length - 1];
   const firstVector = vectors[0];
 
-  const filterPhrase = vectors.map(v => {
-    const filter = (v.attachedMods || []).find(m => glyphs.modifiers[m]?.kind === "filter");
-    return filter ? glyphs.modifiers[filter].phrase : null;
-  }).find(Boolean);
-
-  const durationCount = vectors.reduce((sum, v) => sum + (v.attachedMods || []).filter(m => m === "T").length, 0);
-  const durationPhrase = durationCount ? ` lasting ${durationCount === 1 ? "an extended duration" : "a greatly extended duration"}` : "";
-
   let phrase = "";
 
   if (mainVector?.name === "Summon") {
     const creature = aspectData.creature || `${aspect.name} creature`;
     const loc = previous?.terminalLocation ? ` at ${previous.terminalLocation}` : "";
-    phrase = `summons a ${creature}${loc}${durationPhrase}`;
-    return { text: phrase, terminalLocation: loc ? `the summoned creature` : "the summoned creature", terminalKind: "summon" };
+    const dur = durationPhrase(mainVector);
+    phrase = `summons an ${articleSafe(creature)}${loc} ${dur}`.replace(/\s+/g, " ").trim();
+    return { text: phrase, terminalLocation: "the summoned creature", terminalKind: "summon" };
   }
 
   if (effect.name === "Neutral") {
@@ -177,7 +220,7 @@ function describeSubspell(subspell, previous) {
     if (!mainVector) {
       phrase = `empowers later ${aspectAdj} ${effectWord} manifestations`;
     } else if (mainVector.name === "Dart") {
-      phrase = `a ${effectWord} ${aspectAdj} dart`;
+      phrase = `a ${effectWord} ${rangeAdjective(mainVector)}${aspectAdj} dart`;
     } else if (mainVector.name === "Touch") {
       phrase = `a ${effectWord} ${aspectAdj} touch`;
     } else if (mainVector.name === "Self") {
@@ -185,24 +228,32 @@ function describeSubspell(subspell, previous) {
     } else {
       const shape = glyphs.vectors[mainVector.name]?.phrase || mainVector.name.toLowerCase();
       const loc = previous?.terminalLocation ? ` at ${previous.terminalLocation}` : "";
-      phrase = `a ${effectWord} ${aspectAdj} ${shape}${loc}${durationPhrase}`;
+      const dur = durationPhrase(mainVector);
+      phrase = `a ${effectWord} ${rangeAdjective(mainVector)}${aspectAdj} ${shape}${loc}`;
+      if (dur) phrase += ` ${dur}`;
     }
   }
 
   if (vectors.length > 1 && firstVector?.name === "Dart" && mainVector?.name !== "Dart") {
-    phrase = phrase.replace(`a ${glyphs.effects[effect.name]?.verb || effect.name.toLowerCase()} ${aspectAdj}`, `a ${glyphs.effects[effect.name]?.verb || effect.name.toLowerCase()} ${aspectAdj}`);
-    phrase += ` carried by a dart`;
+    phrase += ` carried by a ${rangeAdjective(firstVector)}dart`;
   }
 
-  if (filterPhrase) phrase += ` ${filterPhrase}`;
+  const fPhrase = vectors.map(filterPhrase).find(Boolean);
+  if (fPhrase) phrase += ` ${fPhrase}`;
 
   let terminalLocation = "its endpoint";
   if (mainVector?.name === "Dart") terminalLocation = "the impact location";
-  else if (["Sphere", "Cube", "Cylinder", "Cone", "Line", "Circle"].includes(mainVector?.name)) terminalLocation = `the ${mainVector.name.toLowerCase()}'s area`;
+  else if (VECTOR_AOE.has(mainVector?.name)) terminalLocation = `the ${mainVector.name.toLowerCase()}'s area`;
   else if (mainVector?.name === "Touch") terminalLocation = "the touched target";
   else if (mainVector?.name === "Self") terminalLocation = "the caster";
 
-  return { text: phrase, terminalLocation, terminalKind: mainVector?.name || "empowerment" };
+  return { text: phrase.replace(/\s+/g, " ").trim(), terminalLocation, terminalKind: mainVector?.name || "empowerment" };
+}
+
+function articleSafe(nounPhrase) {
+  const cleaned = nounPhrase.trim();
+  const article = /^[aeiou]/i.test(cleaned) ? "an" : "a";
+  return `${article} ${cleaned}`;
 }
 
 function describeSpell(spell) {
@@ -341,7 +392,6 @@ function renderCircle(spell) {
     <circle cx="${cx}" cy="${cy}" r="${maxRadius-18}" fill="none" stroke="#9ad7d3" stroke-width="0.75" opacity="0.24"/>
   `;
 
-  // Arcane radial marks, clock-like but ornamental.
   const markCount = 60;
   for (let i = 0; i < markCount; i++) {
     const a = -Math.PI / 2 + (Math.PI * 2 * i / markCount);
@@ -356,7 +406,7 @@ function renderCircle(spell) {
   }
 
   for (const ring of spell.rings) {
-    const radius = baseRadius + (ring.level - 1) * ringGap;
+    const radius = 90 + (ring.level - 1) * 84;
     svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#d8b66a" stroke-opacity="0.56" stroke-width="1.6" filter="url(#softGlow)"/>`;
     svg += `<circle cx="${cx}" cy="${cy}" r="${radius-9}" fill="none" stroke="#9ad7d3" stroke-opacity="0.13" stroke-width="1"/>`;
     svg += `<circle cx="${cx}" cy="${cy}" r="${radius+9}" fill="none" stroke="#9ad7d3" stroke-opacity="0.13" stroke-width="1"/>`;
@@ -384,7 +434,6 @@ function renderCircle(spell) {
     });
   }
 
-  // Center seal.
   svg += `
     <g filter="url(#softGlow)">
       <circle cx="${cx}" cy="${cy}" r="34" fill="none" stroke="#d8b66a" stroke-width="1.4"/>
@@ -395,6 +444,92 @@ function renderCircle(spell) {
 
   svg += `</svg>`;
   circleMount.innerHTML = svg;
+}
+
+function insertGlyph(glyph, kind) {
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  const before = input.value.slice(0, start);
+  const after = input.value.slice(end);
+
+  let insert = glyph;
+
+  if (kind === "modifier") {
+    insert = glyph;
+  } else {
+    const left = before.trimEnd();
+    const currentLine = before.slice(before.lastIndexOf("\n") + 1);
+    const hasGlyphBefore = /[A-Za-z\)]\s*$/.test(currentLine);
+    insert = hasGlyphBefore ? ` > ${glyph}` : glyph;
+  }
+
+  input.value = before + insert + after;
+  const pos = start + insert.length;
+  input.focus();
+  input.setSelectionRange(pos, pos);
+  build();
+}
+
+function buildPalette() {
+  const groups = [
+    ["Effects", Object.keys(glyphs.effects).map(x => [x, "glyph"])],
+    ["Vectors", Object.keys(glyphs.vectors).map(x => [x, "glyph"])],
+    ["Aspects", Object.keys(glyphs.aspects).map(x => [x, "glyph"])],
+    ["Modifiers", ["+", "-", "(T)", "(A)", "(E)"].map(x => [x, "modifier"])]
+  ];
+
+  glyphPalette.innerHTML = groups.map(([group, items]) => `
+    <div class="palette-group">
+      <div class="palette-group-title">${group}</div>
+      <div class="chip-row">
+        ${items.map(([label, kind]) => `<span class="glyph-chip" draggable="true" data-kind="${kind}" data-glyph="${label}">${label}</span>`).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  glyphPalette.querySelectorAll(".glyph-chip").forEach(chip => {
+    chip.addEventListener("click", () => insertGlyph(chip.dataset.glyph, chip.dataset.kind));
+    chip.addEventListener("dragstart", event => {
+      event.dataTransfer.setData("text/plain", JSON.stringify({
+        glyph: chip.dataset.glyph,
+        kind: chip.dataset.kind
+      }));
+    });
+  });
+}
+
+function setupDrop() {
+  input.addEventListener("dragover", event => {
+    event.preventDefault();
+    input.classList.add("drop-active");
+  });
+  input.addEventListener("dragleave", () => input.classList.remove("drop-active"));
+  input.addEventListener("drop", event => {
+    event.preventDefault();
+    input.classList.remove("drop-active");
+    try {
+      const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+      input.focus();
+      const caret = getCaretFromDrop(input, event);
+      input.setSelectionRange(caret, caret);
+      insertGlyph(data.glyph, data.kind);
+    } catch {
+      const text = event.dataTransfer.getData("text/plain");
+      insertGlyph(text, "glyph");
+    }
+  });
+}
+
+function getCaretFromDrop(textarea, event) {
+  if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(event.clientX, event.clientY);
+    return pos?.offset ?? textarea.selectionStart;
+  }
+  if (document.caretRangeFromPoint) {
+    const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+    return range?.startOffset ?? textarea.selectionStart;
+  }
+  return textarea.selectionStart;
 }
 
 function escapeXml(str) {
@@ -427,6 +562,7 @@ function buildReference() {
 }
 
 parseBtn.addEventListener("click", build);
+input.addEventListener("input", build);
 
 copyJsonBtn.addEventListener("click", async () => {
   if (!currentSpell) build();
@@ -447,5 +583,7 @@ exportSvgBtn.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
+buildPalette();
+setupDrop();
 buildReference();
 build();

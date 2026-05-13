@@ -7,7 +7,7 @@ Static web app for building WILDER / Concentric Arcana spell circles.
 - Write spells using ring syntax.
 - Parse Effects, Vectors, Modifiers, and Aspects.
 - Calculate ring load and spell complexity.
-- Generate a plain-language spell description by chaining subspell readings.
+- Generate a plain-language spell description by chaining subspell readings, including range, filters, and duration modifiers.
 - Render an arcane rune-based spell circle as SVG.
 - Export SVG.
 - Copy parsed spell JSON.
@@ -51,7 +51,7 @@ docs/
 
 ## Next Development Tasks
 
-- Add draggable glyph placement.
+- Improve drag-and-drop with true visual ring editing.
 - Add custom image import for rune art.
 - Add save/load spell library.
 - Add stronger validation for empowerment rules.
@@ -59,3 +59,14 @@ docs/
 - Add PNG export.
 - Add hex-grid preview for vector areas.
 - Add print-friendly spell card export.
+
+
+## v3 Notes
+
+This version adds:
+
+- Modifier-aware spell descriptions.
+- Range description for Dart and AoE vectors.
+- Duration descriptions in seconds for Summon and persistent AoE vectors.
+- A glyph palette with click and drag insertion.
+- Automatic `>` separator insertion when adding non-modifier glyphs after an existing glyph.
