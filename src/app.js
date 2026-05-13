@@ -441,7 +441,7 @@ const blessMap = {
   Poison: "Dex",
   Force: "Str",
   Acid: "Wit",
-  Darkness: "Agi",
+  Darkness: "Tg",
   Light: "Intelligence",
   Thunder: "Presence",
   Lightning: "Agi",
