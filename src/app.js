@@ -346,12 +346,26 @@ if (vector && glyphs.vectors[vector.name]) {
 
     const ringLoad = analyzed.reduce((sum, g) => sum + g.complexity, 0) * level;
 
+    const glyphCount = analyzed.length;
+    const glyphLimit = level * 6;
+
+    const ringWarnings = [];
+
+if (glyphCount > glyphLimit) {
+  ringWarnings.push(
+    `Ring ${level} exceeds maximum glyph count (${glyphCount}/${glyphLimit}).`
+  );
+}
+
     return {
-      level,
-      tokens: analyzed,
-      load: ringLoad,
-      subspells: splitSubspells(analyzed)
-    };
+  level,
+  tokens: analyzed,
+  load: ringLoad,
+  glyphCount,
+  glyphLimit,
+  warnings: ringWarnings,
+  subspells: splitSubspells(analyzed)
+};
   }
 
   function splitSubspells(tokens) {
@@ -990,6 +1004,12 @@ function describeSpell(spell) {
     `).join("");
 
     const warnings = [];
+
+    for (const ring of spell.rings) {
+  if (ring.warnings?.length) {
+    warnings.push(...ring.warnings);
+  }
+}
 
 let previousSubspell = null;
 
