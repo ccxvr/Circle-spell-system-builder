@@ -392,8 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return filter ? glyphs.modifiers[filter].phrase : "";
   }
 
-  function describeSubspell(subspell, previous) {
-   const harmDice = {
+ const harmDice = {
   1: "1d4",
   2: "1d6",
   3: "1d8",
@@ -740,31 +739,6 @@ function describeSpell(spell) {
 
   return sentence + ".";
 }
-  function describeSpell(spell) {
-    const pieces = [];
-    let previous = null;
-
-    for (const ring of spell.rings) {
-      for (const sub of ring.subspells) {
-        const desc = describeSubspell(sub, previous);
-        pieces.push(desc.text);
-        previous = desc;
-      }
-    }
-
-    if (!pieces.length) return "No complete spell clauses detected.";
-
-    let sentence = pieces[0];
-    for (let i = 1; i < pieces.length; i++) {
-      const p = pieces[i];
-      if (/^summons\b/.test(p)) sentence += ` that ${p}`;
-      else if (/^empowers\b/.test(p)) sentence += `, then ${p}`;
-      else sentence += `, then creates ${p}`;
-    }
-
-    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
-    return sentence + ".";
-  }
 
   function summarize(spell) {
     const totalLoadRaw = spell.rings.reduce((sum, r) => sum + r.load, 0);
