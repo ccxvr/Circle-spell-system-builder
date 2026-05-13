@@ -3,7 +3,7 @@ const glyphs = {
     "Harm": {
       "complexity": 1,
       "verb": "harmful",
-      "symbol": "⚚"
+      "symbol": "♄"
     },
     "Heal": {
       "complexity": 1,
