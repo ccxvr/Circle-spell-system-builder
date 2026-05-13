@@ -81,19 +81,28 @@ const glyphs = {
   },
   "vectors": {
     "Self": {
-      "complexity": 0.25,
-      "category": "contact",
-      "rangeModifiable": false,
-      "phrase": "self",
-      "symbol": "⊙"
-    },
-    "Touch": {
-      "complexity": 0.5,
-      "category": "contact",
-      "rangeModifiable": false,
-      "phrase": "touch",
-      "symbol": "⊹"
-    },
+  "complexity": 1,
+  "category": "contact",
+  "rangeModifiable": false,
+  "localEmpower": true,
+  "phrase": "self",
+  "symbol": "⊙"
+},
+"Touch": {
+  "complexity": 1,
+  "category": "contact",
+  "rangeModifiable": false,
+  "localEmpower": true,
+  "phrase": "touch",
+  "symbol": "⊹"
+},
+"Target": {
+  "complexity": 1,
+  "category": "contact",
+  "rangeModifiable": false,
+  "phrase": "target",
+  "symbol": "⊚"
+},
     "Dart": {
       "complexity": 1,
       "category": "projected",
@@ -167,7 +176,16 @@ const glyphs = {
       "persistent": true,
       "phrase": "summon",
       "symbol": "⟐"
-    }
+    },
+    "Conjure": {
+  "complexity": 1,
+  "category": "constructive",
+  "duration": "8T",
+  "rangeModifiable": false,
+  "persistent": true,
+  "phrase": "conjure",
+  "symbol": "⟡"
+}
   },
   "modifiers": {
     "+": {
@@ -214,6 +232,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let currentSpell = null;
   const VECTOR_AOE = new Set(["Sphere", "Cube", "Cylinder", "Cone", "Line", "Circle"]);
+  const VECTOR_CONTACT = new Set(["Self", "Touch", "Target"]);
+  const VECTOR_CONSTRUCTIVE = new Set(["Summon", "Conjure"]);
 
   function normalizeToken(raw) {
     return raw.trim().replace(/→/g, ">").replace(/\s+/g, "");
@@ -297,13 +317,10 @@ if (vector && glyphs.vectors[vector.name]) {
             continue;
           }
           if (data.kind === "filter") filterCount += 1;
-          if (data.kind === "duration") {
-            const vdata = glyphs.vectors[vector.name];
-            if (!vdata.persistent) {
-              legal = false;
-              notes.push(`${vector.name} cannot take duration modifier (T).`);
-            }
-          }
+         if (data.kind === "duration") {
+  // Final legality depends on the whole subspell.
+  // Example: Self(T), Touch(T), and Target(T) are legal only for Bless/Hex.
+}
           base *= data.multiplier;
         }
 
@@ -389,12 +406,33 @@ if (vector && glyphs.vectors[vector.name]) {
     return "";
   }
 
-  function durationPhrase(vector) {
-    const tCount = (vector.attachedMods || []).filter(m => m === "T").length;
-    if (!tCount) {
-      if (vector.name === "Summon") return "that lasts for 8 seconds";
-      return "";
-    }
+ function durationPhrase(vector, effect) {
+  const tCount = (vector.attachedMods || []).filter(m => m === "T").length;
+
+  if (vector.name === "Summon") {
+    const duration = 8 * Math.pow(2, tCount);
+    return `that lasts for ${duration}T`;
+  }
+
+  if (vector.name === "Conjure") {
+    if (!tCount) return "that lasts for 8T";
+    return `that lasts for ${8 + (tCount * 3)}T`;
+  }
+
+  if (VECTOR_AOE.has(vector.name)) {
+    if (!tCount) return "";
+    return `that persists for ${tCount * 3}T`;
+  }
+
+  if (
+    VECTOR_CONTACT.has(vector.name) &&
+    (effect === "Bless" || effect === "Hex")
+  ) {
+    return `that lasts for ${3 + (tCount * 3)}T`;
+  }
+
+  return "";
+}
 
     if (vector.name === "Summon") {
       const seconds = 8 * Math.pow(2, tCount);
@@ -526,6 +564,25 @@ function getEmpowermentLevel(effect, aspect, previousRings) {
   return level;
 }
 
+function conjureText(aspect, level) {
+  const power = level;
+
+  const map = {
+    Fire: `conjures fire, causing Blaze ${1 + power}, resisted by a +0 Endurance check`,
+    Poison: `conjures poison, causing Poisoned ${1 + power}, resisted by a +0 Endurance check`,
+    Force: `conjures a barrier around the area with 0 DR and ${3 + (3 * power)} HP`,
+    Acid: `conjures acid, reducing DR of creatures and objects in the area by ${1 + power} while they remain inside`,
+    Darkness: `conjures magical darkness that blocks sight and removes light effects of lower spell power`,
+    Light: `conjures magical light that removes darkness effects of lower spell power and counts as sunlight`,
+    Thunder: `conjures a silencing area and immediately deals ${power}d4 thunder damage to creatures inside`,
+    Lightning: `removes magical continuous effects in the area with spell power ${power} or lower`,
+    Cold: `conjures ice and sleet; movement through it requires an Agi check or the creature falls prone`,
+    Earth: `conjures a rock formation with ${power} DR and ${2 + (2 * power)} HP`
+  };
+
+  return map[aspect] || `conjures a ${aspect.toLowerCase()} environmental effect`;
+}
+
 function mechanicalText(effect, aspect, level) {
 
   if (effect === "Harm") {
@@ -592,26 +649,55 @@ function mechanicalText(effect, aspect, level) {
     };
   }
 
-  if (
-    vectors.some(v => v.name === "Summon") &&
-    effect.name !== "Neutral"
-  ) {
+  const hasSummon = vectors.some(v => v.name === "Summon");
+  const hasConjure = vectors.some(v => v.name === "Conjure");
+
+  if ((hasSummon || hasConjure) && effect.name !== "Neutral") {
     return {
       valid: false,
       useless: false,
-      reason: "Summon may only be used with Neutral"
+      reason: "Summon and Conjure may only be used with Neutral"
     };
   }
 
-  if (
-    effect.name === "Neutral" &&
-    !vectors.some(v => v.name === "Summon")
-  ) {
+  if (effect.name === "Neutral" && !hasSummon && !hasConjure) {
     return {
       valid: true,
       useless: true,
-      reason: "Neutral does nothing without Summon"
+      reason: "Neutral does nothing without Summon or Conjure"
     };
+  }
+
+  if (hasConjure) {
+    const conjureIndex = vectors.findIndex(v => v.name === "Conjure");
+    const nextVector = vectors[conjureIndex + 1];
+
+    if (!nextVector || !VECTOR_AOE.has(nextVector.name)) {
+      return {
+        valid: false,
+        useless: false,
+        reason: "Conjure must be followed by an area vector"
+      };
+    }
+  }
+
+  for (const vector of vectors) {
+    const tCount = (vector.attachedMods || []).filter(m => m === "T").length;
+    if (!tCount) continue;
+
+    const isSummon = vector.name === "Summon";
+    const isPersistentArea = VECTOR_AOE.has(vector.name);
+    const isBlessHexContact =
+      VECTOR_CONTACT.has(vector.name) &&
+      (effect.name === "Bless" || effect.name === "Hex");
+
+    if (!isSummon && !isPersistentArea && !isBlessHexContact) {
+      return {
+        valid: false,
+        useless: false,
+        reason: `${vector.name} may only take (T) if it is Summon, a persistent area vector, or a Bless/Hex Self, Touch, or Target vector`
+      };
+    }
   }
 
   return {
@@ -660,6 +746,29 @@ if (!validation.valid) {
     };
   }
 
+  if (vectors.some(v => v.name === "Conjure")) {
+  const areaVector = vectors.find((v, idx) =>
+    idx > vectors.findIndex(x => x.name === "Conjure") &&
+    VECTOR_AOE.has(v.name)
+  );
+
+  const duration = durationPhrase(areaVector || mainVector, effect.name);
+  phrase = conjureText(aspect.name, level);
+
+  if (areaVector) {
+    phrase += ` in a ${areaVector.name.toLowerCase()} area`;
+  }
+
+  if (duration) {
+    phrase += ` ${duration}`;
+  }
+
+  return {
+    text: phrase,
+    terminalLocation: areaVector ? `the ${areaVector.name.toLowerCase()} area` : "its endpoint"
+  };
+}
+  
 if (validation.useless) {
   return {
     text: `a useless ${aspectAdj} spell that does nothing meaningful`,
@@ -667,11 +776,15 @@ if (validation.useless) {
   };
 }
 
-  const level = getEmpowermentLevel(
-    effect.name,
-    aspect.name,
-    previousRings
-  );
+  let level = getEmpowermentLevel(
+  effect.name,
+  aspect.name,
+  previousRings
+);
+
+if (vectors.some(v => glyphs.vectors[v.name]?.localEmpower)) {
+  level += 1;
+}
 
   let phrase = "";
 
@@ -693,7 +806,7 @@ if (validation.useless) {
   if (mainVector.name === "Summon") {
 
     const duration =
-      durationPhrase(mainVector);
+      durationPhrase(mainVector, effect.name),
 
     phrase =
       `summons a TL ${level} ${aspectAdj} creature ` +
@@ -735,7 +848,7 @@ if (validation.useless) {
       mainVector.name.toLowerCase();
 
     const duration =
-      durationPhrase(mainVector);
+      durationPhrase(mainVector, effect.name);
 
     phrase =
       `a ${effect.name.toLowerCase()} ` +
