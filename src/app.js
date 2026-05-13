@@ -551,7 +551,7 @@ function getEmpowermentLevel(effect, aspect, previousRings) {
 }
 
 function conjureText(aspect, level) {
-  const power = level;
+  const power = Math.max(0, level - 1);
 
   const map = {
     Fire: `conjures fire, causing Blaze ${1 + power}, resisted by a +0 Endurance check`,
