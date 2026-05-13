@@ -10,7 +10,7 @@
   <header>
     <div>
       <h1>WILDER Spell Circle Builder</h1>
-      <p>Build Concentric Arcana spells, calculate complexity, and export spell circles as SVG.</p>
+      <p>Build Concentric Arcana spells, calculate complexity, describe the spell, and export arcane circles as SVG.</p>
     </div>
   </header>
 
@@ -18,12 +18,12 @@
     <section class="panel editor-panel">
       <h2>Spell Input</h2>
       <p class="hint">
-        Write one ring per line. Use <code>Ring 1:</code> labels or just enter glyph chains.
+        Write one ring per line. Use <code>Ring 1:</code> labels or plain glyph chains.
         Examples: <code>Harm > Dart+ > Fire</code>, <code>Neutral > Summon(T) > Fire</code>.
       </p>
 
-      <textarea id="spellInput" spellcheck="false">Ring 1: Harm > Fire
-Ring 2: Harm > Dart > Sphere > Fire</textarea>
+      <textarea id="spellInput" spellcheck="false">Ring 1: Harm > Dart > Fire
+Ring 2: Neutral > Summon > Fire</textarea>
 
       <div class="row">
         <button id="parseBtn">Build Spell</button>
@@ -41,6 +41,9 @@ Ring 2: Harm > Dart > Sphere > Fire</textarea>
     </section>
 
     <section class="panel">
+      <h2>Spell Reading</h2>
+      <div id="spellDescription" class="spell-description"></div>
+
       <h2>Rules Output</h2>
       <div id="summary"></div>
       <pre id="jsonOutput"></pre>

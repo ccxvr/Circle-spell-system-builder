@@ -8,6 +8,7 @@ const circleMount = document.querySelector("#circleMount");
 const summary = document.querySelector("#summary");
 const jsonOutput = document.querySelector("#jsonOutput");
 const glyphReference = document.querySelector("#glyphReference");
+const spellDescription = document.querySelector("#spellDescription");
 
 let currentSpell = null;
 
@@ -111,8 +112,23 @@ function analyzeRing(level, tokens) {
   return {
     level,
     tokens: analyzed,
-    load: ringLoad
+    load: ringLoad,
+    subspells: splitSubspells(analyzed)
   };
+}
+
+function splitSubspells(tokens) {
+  const result = [];
+  let current = [];
+  for (const token of tokens) {
+    current.push(token);
+    if (token.type === "aspect") {
+      result.push(current);
+      current = [];
+    }
+  }
+  if (current.length) result.push(current);
+  return result;
 }
 
 function complexityFromLoad(load) {
@@ -125,6 +141,96 @@ function complexityFromLoad(load) {
   return Math.ceil(Math.log2(load / 4));
 }
 
+function describeSubspell(subspell, previous) {
+  const effect = subspell.find(t => t.type === "effect");
+  const aspect = [...subspell].reverse().find(t => t.type === "aspect");
+  const vectors = subspell.filter(t => t.type === "vector");
+
+  if (!effect || !aspect) return "an incomplete arcane clause";
+
+  const aspectData = glyphs.aspects[aspect.name] || {};
+  const aspectAdj = aspectData.adjective || aspect.name.toLowerCase();
+  const mainVector = vectors[vectors.length - 1];
+  const firstVector = vectors[0];
+
+  const filterPhrase = vectors.map(v => {
+    const filter = (v.attachedMods || []).find(m => glyphs.modifiers[m]?.kind === "filter");
+    return filter ? glyphs.modifiers[filter].phrase : null;
+  }).find(Boolean);
+
+  const durationCount = vectors.reduce((sum, v) => sum + (v.attachedMods || []).filter(m => m === "T").length, 0);
+  const durationPhrase = durationCount ? ` lasting ${durationCount === 1 ? "an extended duration" : "a greatly extended duration"}` : "";
+
+  let phrase = "";
+
+  if (mainVector?.name === "Summon") {
+    const creature = aspectData.creature || `${aspect.name} creature`;
+    const loc = previous?.terminalLocation ? ` at ${previous.terminalLocation}` : "";
+    phrase = `summons a ${creature}${loc}${durationPhrase}`;
+    return { text: phrase, terminalLocation: loc ? `the summoned creature` : "the summoned creature", terminalKind: "summon" };
+  }
+
+  if (effect.name === "Neutral") {
+    phrase = `creates a neutral ${aspectAdj} manifestation`;
+  } else {
+    const effectWord = glyphs.effects[effect.name]?.verb || effect.name.toLowerCase();
+    if (!mainVector) {
+      phrase = `empowers later ${aspectAdj} ${effectWord} manifestations`;
+    } else if (mainVector.name === "Dart") {
+      phrase = `a ${effectWord} ${aspectAdj} dart`;
+    } else if (mainVector.name === "Touch") {
+      phrase = `a ${effectWord} ${aspectAdj} touch`;
+    } else if (mainVector.name === "Self") {
+      phrase = `a ${effectWord} ${aspectAdj} effect on the caster`;
+    } else {
+      const shape = glyphs.vectors[mainVector.name]?.phrase || mainVector.name.toLowerCase();
+      const loc = previous?.terminalLocation ? ` at ${previous.terminalLocation}` : "";
+      phrase = `a ${effectWord} ${aspectAdj} ${shape}${loc}${durationPhrase}`;
+    }
+  }
+
+  if (vectors.length > 1 && firstVector?.name === "Dart" && mainVector?.name !== "Dart") {
+    phrase = phrase.replace(`a ${glyphs.effects[effect.name]?.verb || effect.name.toLowerCase()} ${aspectAdj}`, `a ${glyphs.effects[effect.name]?.verb || effect.name.toLowerCase()} ${aspectAdj}`);
+    phrase += ` carried by a dart`;
+  }
+
+  if (filterPhrase) phrase += ` ${filterPhrase}`;
+
+  let terminalLocation = "its endpoint";
+  if (mainVector?.name === "Dart") terminalLocation = "the impact location";
+  else if (["Sphere", "Cube", "Cylinder", "Cone", "Line", "Circle"].includes(mainVector?.name)) terminalLocation = `the ${mainVector.name.toLowerCase()}'s area`;
+  else if (mainVector?.name === "Touch") terminalLocation = "the touched target";
+  else if (mainVector?.name === "Self") terminalLocation = "the caster";
+
+  return { text: phrase, terminalLocation, terminalKind: mainVector?.name || "empowerment" };
+}
+
+function describeSpell(spell) {
+  const pieces = [];
+  let previous = null;
+
+  for (const ring of spell.rings) {
+    for (const sub of ring.subspells) {
+      const desc = describeSubspell(sub, previous);
+      pieces.push(desc.text);
+      previous = desc;
+    }
+  }
+
+  if (!pieces.length) return "No complete spell clauses detected.";
+
+  let sentence = pieces[0];
+  for (let i = 1; i < pieces.length; i++) {
+    const p = pieces[i];
+    if (/^summons\b/.test(p)) sentence += ` that ${p}`;
+    else if (/^empowers\b/.test(p)) sentence += `, then ${p}`;
+    else sentence += `, then creates ${p}`;
+  }
+
+  sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+  return sentence + ".";
+}
+
 function summarize(spell) {
   const totalLoadRaw = spell.rings.reduce((sum, r) => sum + r.load, 0);
   const totalLoad = Math.ceil(totalLoadRaw);
@@ -133,6 +239,7 @@ function summarize(spell) {
   spell.totalLoadRaw = totalLoadRaw;
   spell.totalLoad = totalLoad;
   spell.complexity = complexity;
+  spell.description = describeSpell(spell);
 
   const ringRows = spell.rings.map(r => `
     <tr>
@@ -146,6 +253,11 @@ function summarize(spell) {
     r.tokens.flatMap(t => t.legal === false ? [`Ring ${r.level}: ${t.raw} — ${(t.notes || ["Illegal glyph"]).join(" ")}`] : [])
   );
 
+  spellDescription.innerHTML = `
+    <div>${escapeHtml(spell.description)}</div>
+    <div class="subtitle">Generated from chained subspell readings. Review edge cases manually.</div>
+  `;
+
   summary.innerHTML = `
     <p><strong>Total Load:</strong> ${totalLoad} <span class="muted">(raw ${totalLoadRaw.toFixed(2)})</span></p>
     <p><strong>Spell Complexity:</strong> ${complexity}</p>
@@ -153,67 +265,133 @@ function summarize(spell) {
       <thead><tr><th>Ring</th><th>Glyphs</th><th>Load</th></tr></thead>
       <tbody>${ringRows}</tbody>
     </table>
-    ${warnings.length ? `<h3>Warnings</h3><ul>${warnings.map(w => `<li>${w}</li>`).join("")}</ul>` : ""}
+    ${warnings.length ? `<h3>Warnings</h3><ul>${warnings.map(w => `<li>${escapeHtml(w)}</li>`).join("")}</ul>` : ""}
   `;
   jsonOutput.textContent = JSON.stringify(spell, null, 2);
 }
 
+const runePaths = {
+  Harm: `M0,-25 L9,-6 L24,-6 L12,4 L18,24 L0,11 L-18,24 L-12,4 L-24,-6 L-9,-6 Z`,
+  Heal: `M0,-24 C12,-12 12,12 0,24 C-12,12 -12,-12 0,-24 M-16,0 L16,0 M0,-16 L0,16`,
+  Hex: `M-22,-18 L22,18 M22,-18 L-22,18 M0,-26 L0,26 M-18,0 L18,0`,
+  Bless: `M0,-26 L7,-7 L26,0 L7,7 L0,26 L-7,7 L-26,0 L-7,-7 Z M0,-14 L0,14 M-14,0 L14,0`,
+  Neutral: `M0,-24 L21,-12 L21,12 L0,24 L-21,12 L-21,-12 Z M-10,-8 L10,8 M10,-8 L-10,8`,
+  Fire: `M0,-28 C16,-12 3,-4 14,9 C21,18 8,28 0,28 C-13,28 -20,17 -13,6 C-7,-3 -4,-8 0,-28`,
+  Poison: `M0,-22 C12,-22 22,-12 22,0 C22,12 12,22 0,22 C-12,22 -22,12 -22,0 C-22,-12 -12,-22 0,-22 M-9,-4 L-2,3 L10,-10 M-8,10 L8,10`,
+  Force: `M-26,0 L22,0 M9,-13 L25,0 L9,13 M-16,-14 L-4,0 L-16,14`,
+  Acid: `M0,-26 L20,-4 L8,24 L-16,20 L-24,-5 Z M-8,2 L8,2 M-3,10 L12,10`,
+  Darkness: `M12,-23 C-8,-20 -18,-4 -12,12 C-5,29 15,24 23,10 C13,17 0,12 -3,0 C-6,-12 2,-20 12,-23`,
+  Light: `M0,-26 L5,-8 L22,-16 L10,0 L26,5 L8,8 L16,24 L0,12 L-16,24 L-8,8 L-26,5 L-10,0 L-22,-16 L-5,-8 Z`,
+  Thunder: `M-18,-23 L10,-23 L-2,-3 L18,-3 L-11,26 L0,5 L-18,5 Z`,
+  Lightning: `M-6,-27 L18,-3 L5,-3 L12,27 L-18,0 L-4,0 Z`,
+  Cold: `M0,-27 L0,27 M-23,-14 L23,14 M23,-14 L-23,14 M-8,-19 L0,-12 L8,-19 M-8,19 L0,12 L8,19`,
+  Earth: `M0,-26 L24,-8 L15,22 L-15,22 L-24,-8 Z M-12,-2 L12,-2 M-6,9 L6,9`,
+  Dart: `M-25,4 L14,4 L14,14 L27,0 L14,-14 L14,-4 L-25,-4 Z`,
+  Self: `M0,-25 C14,-25 24,-14 24,0 C24,14 14,25 0,25 C-14,25 -24,14 -24,0 C-24,-14 -14,-25 0,-25 M0,-12 C7,-12 12,-7 12,0 C12,7 7,12 0,12 C-7,12 -12,7 -12,0 C-12,-7 -7,-12 0,-12`,
+  Touch: `M-22,8 C-10,-16 10,-16 22,8 M-10,8 C-5,17 5,17 10,8 M-22,8 L-26,19 M22,8 L26,19`,
+  Sphere: `M0,-25 C14,-25 25,-14 25,0 C25,14 14,25 0,25 C-14,25 -25,14 -25,0 C-25,-14 -14,-25 0,-25 M-25,0 C-10,-9 10,-9 25,0 M-25,0 C-10,9 10,9 25,0`,
+  Circle: `M0,-26 C14,-26 26,-14 26,0 C26,14 14,26 0,26 C-14,26 -26,14 -26,0 C-26,-14 -14,-26 0,-26 M0,-16 C9,-16 16,-9 16,0 C16,9 9,16 0,16 C-9,16 -16,9 -16,0 C-16,-9 -9,-16 0,-16`,
+  Cube: `M-18,-12 L0,-24 L18,-12 L18,12 L0,24 L-18,12 Z M-18,-12 L0,0 L18,-12 M0,0 L0,24`,
+  Cylinder: `M-20,-14 C-20,-24 20,-24 20,-14 L20,14 C20,24 -20,24 -20,14 Z M-20,-14 C-20,-4 20,-4 20,-14 M-20,14 C-20,4 20,4 20,14`,
+  Cone: `M0,-26 L25,22 L-25,22 Z M-13,22 C-6,14 6,14 13,22`,
+  Line: `M-24,-24 L24,24 M-13,-24 L24,13 M-24,-13 L13,24`,
+  Summon: `M0,-28 C17,-24 27,-12 24,5 C21,20 8,28 -8,23 C-23,17 -27,0 -19,-14 C-13,-25 -2,-27 0,-28 M-11,-4 L11,-4 L0,13 Z`
+};
+
 function glyphShape(g, x, y, size = 22) {
-  const common = `stroke="#d7b36a" stroke-width="2" fill="none"`;
-  const label = `<text x="${x}" y="${y + size + 14}" text-anchor="middle" font-size="10" fill="#cbd5e1">${escapeXml(g.name)}</text>`;
-  let shape = "";
-
-  if (g.type === "effect") {
-    shape = `<path d="M ${x} ${y-size} L ${x+size} ${y} L ${x} ${y+size} L ${x-size} ${y} Z" ${common}/>`;
-  } else if (g.type === "aspect") {
-    shape = `<circle cx="${x}" cy="${y}" r="${size * 0.85}" ${common}/><path d="M ${x-size*.6} ${y+size*.6} L ${x+size*.6} ${y-size*.6}" ${common}/>`;
-  } else if (g.type === "vector") {
-    if (g.name === "Dart") shape = `<path d="M ${x-size} ${y} L ${x+size} ${y} M ${x+size} ${y} L ${x+size*.45} ${y-size*.45} M ${x+size} ${y} L ${x+size*.45} ${y+size*.45}" ${common}/>`;
-    else if (g.name === "Sphere" || g.name === "Circle") shape = `<circle cx="${x}" cy="${y}" r="${size}" ${common}/>`;
-    else if (g.name === "Self") shape = `<circle cx="${x}" cy="${y}" r="${size*.45}" fill="#d7b36a"/><circle cx="${x}" cy="${y}" r="${size}" ${common}/>`;
-    else if (g.name === "Touch") shape = `<path d="M ${x-size} ${y} Q ${x} ${y-size} ${x+size} ${y}" ${common}/><circle cx="${x+size}" cy="${y}" r="4" fill="#d7b36a"/>`;
-    else if (g.name === "Cone") shape = `<path d="M ${x-size} ${y+size} L ${x} ${y-size} L ${x+size} ${y+size}" ${common}/>`;
-    else if (g.name === "Line") shape = `<path d="M ${x-size} ${y-size} L ${x+size} ${y+size}" ${common}/><path d="M ${x-size*.5} ${y-size} L ${x+size} ${y+size*.5}" ${common}/>`;
-    else if (g.name === "Cube") shape = `<rect x="${x-size}" y="${y-size}" width="${size*2}" height="${size*2}" ${common}/>`;
-    else if (g.name === "Cylinder") shape = `<ellipse cx="${x}" cy="${y-size*.7}" rx="${size}" ry="${size*.35}" ${common}/><path d="M ${x-size} ${y-size*.7} L ${x-size} ${y+size*.7} M ${x+size} ${y-size*.7} L ${x+size} ${y+size*.7}" ${common}/><ellipse cx="${x}" cy="${y+size*.7}" rx="${size}" ry="${size*.35}" ${common}/>`;
-    else if (g.name === "Summon") shape = `<path d="M ${x} ${y-size} C ${x+size} ${y-size} ${x+size} ${y+size} ${x} ${y+size} C ${x-size} ${y+size} ${x-size} ${y-size} ${x} ${y-size}" ${common}/><path d="M ${x-size*.55} ${y} L ${x+size*.55} ${y}" ${common}/>`;
-    else shape = `<rect x="${x-size}" y="${y-size}" width="${size*2}" height="${size*2}" ${common}/>`;
-  } else {
-    shape = `<text x="${x}" y="${y}" text-anchor="middle" font-size="18" fill="#ff7070">?</text>`;
-  }
-
+  const path = runePaths[g.name] || `M-18,-18 L18,-18 L18,18 L-18,18 Z`;
+  const stroke = g.type === "unknown" ? "#e78888" : "#d8b66a";
+  const glow = g.type === "aspect" ? "#9ad7d3" : "#d8b66a";
+  const label = `<text x="${x}" y="${y + size + 18}" text-anchor="middle" font-size="10" fill="#d8c99d" font-family="Georgia, serif">${escapeXml(g.name)}</text>`;
   const mods = (g.rangeMods || []).concat(g.attachedMods || []).join("");
-  const modText = mods ? `<text x="${x}" y="${y - size - 7}" text-anchor="middle" font-size="12" fill="#88d8ff">${escapeXml(mods)}</text>` : "";
-  return `<g>${shape}${modText}${label}</g>`;
+  const modText = mods ? `<text x="${x}" y="${y - size - 9}" text-anchor="middle" font-size="13" fill="#9ad7d3" font-family="Georgia, serif">${escapeXml(mods)}</text>` : "";
+  return `
+    <g transform="translate(${x}, ${y}) scale(${size / 28})">
+      <path d="${path}" fill="none" stroke="${stroke}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${path}" fill="none" stroke="${glow}" stroke-opacity="0.16" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    ${modText}
+    ${label}
+  `;
 }
 
 function renderCircle(spell) {
-  const size = 760;
+  const size = 820;
   const cx = size / 2;
   const cy = size / 2;
-  const ringGap = 78;
-  const baseRadius = 80;
-  const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 65;
+  const ringGap = 84;
+  const baseRadius = 90;
+  const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 78;
 
   let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
-    <rect width="100%" height="100%" fill="#101116"/>
-    <circle cx="${cx}" cy="${cy}" r="${maxRadius}" fill="none" stroke="#232632" stroke-width="2"/>
+    <defs>
+      <radialGradient id="bg" cx="50%" cy="45%" r="65%">
+        <stop offset="0%" stop-color="#1a1622"/>
+        <stop offset="65%" stop-color="#0d0b11"/>
+        <stop offset="100%" stop-color="#07060a"/>
+      </radialGradient>
+      <filter id="softGlow">
+        <feGaussianBlur stdDeviation="2.8" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bg)"/>
+    <circle cx="${cx}" cy="${cy}" r="${maxRadius}" fill="none" stroke="#2d2530" stroke-width="14" opacity="0.65"/>
+    <circle cx="${cx}" cy="${cy}" r="${maxRadius}" fill="none" stroke="#d8b66a" stroke-width="1.4" opacity="0.85"/>
+    <circle cx="${cx}" cy="${cy}" r="${maxRadius-18}" fill="none" stroke="#9ad7d3" stroke-width="0.75" opacity="0.24"/>
   `;
+
+  // Arcane radial marks, clock-like but ornamental.
+  const markCount = 60;
+  for (let i = 0; i < markCount; i++) {
+    const a = -Math.PI / 2 + (Math.PI * 2 * i / markCount);
+    const long = i % 5 === 0;
+    const r1 = maxRadius - (long ? 22 : 12);
+    const r2 = maxRadius - 3;
+    const x1 = cx + Math.cos(a) * r1;
+    const y1 = cy + Math.sin(a) * r1;
+    const x2 = cx + Math.cos(a) * r2;
+    const y2 = cy + Math.sin(a) * r2;
+    svg += `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)}" stroke="#d8b66a" stroke-width="${long ? 1.4 : 0.7}" opacity="${long ? 0.72 : 0.35}"/>`;
+  }
 
   for (const ring of spell.rings) {
     const radius = baseRadius + (ring.level - 1) * ringGap;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#343846" stroke-width="2"/>`;
-    svg += `<text x="${cx}" y="${cy-radius-8}" text-anchor="middle" font-size="12" fill="#7f8494">Ring ${ring.level}</text>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#d8b66a" stroke-opacity="0.56" stroke-width="1.6" filter="url(#softGlow)"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${radius-9}" fill="none" stroke="#9ad7d3" stroke-opacity="0.13" stroke-width="1"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${radius+9}" fill="none" stroke="#9ad7d3" stroke-opacity="0.13" stroke-width="1"/>`;
+
+    const segmentCount = Math.max(6 * ring.level, ring.tokens.length);
+    for (let i = 0; i < segmentCount; i++) {
+      const a = -Math.PI / 2 + (Math.PI * 2 * i / segmentCount);
+      const r1 = radius - 5;
+      const r2 = radius + 5;
+      const x1 = cx + Math.cos(a) * r1;
+      const y1 = cy + Math.sin(a) * r1;
+      const x2 = cx + Math.cos(a) * r2;
+      const y2 = cy + Math.sin(a) * r2;
+      svg += `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)}" stroke="#d8b66a" stroke-width="0.55" opacity="0.26"/>`;
+    }
+
+    svg += `<text x="${cx}" y="${cy-radius-15}" text-anchor="middle" font-size="11" fill="#7f735a" font-family="Georgia, serif">Ring ${ring.level}</text>`;
 
     const n = Math.max(ring.tokens.length, 1);
     ring.tokens.forEach((token, i) => {
-      // Start at 12 o'clock, read clockwise.
       const angle = -Math.PI / 2 + (2 * Math.PI * i / n);
       const x = cx + Math.cos(angle) * radius;
       const y = cy + Math.sin(angle) * radius;
-      svg += glyphShape(token, x, y, 20);
+      svg += glyphShape(token, x, y, 23);
     });
   }
+
+  // Center seal.
+  svg += `
+    <g filter="url(#softGlow)">
+      <circle cx="${cx}" cy="${cy}" r="34" fill="none" stroke="#d8b66a" stroke-width="1.4"/>
+      <path d="M ${cx} ${cy-26} L ${cx+22} ${cy+13} L ${cx-22} ${cy+13} Z" fill="none" stroke="#d8b66a" stroke-width="1.2"/>
+      <circle cx="${cx}" cy="${cy}" r="5" fill="#d8b66a" opacity="0.75"/>
+    </g>
+  `;
 
   svg += `</svg>`;
   circleMount.innerHTML = svg;
@@ -221,6 +399,10 @@ function renderCircle(spell) {
 
 function escapeXml(str) {
   return String(str).replace(/[<>&'"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[<>&'"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&#39;", '"': "&quot;" }[c]));
 }
 
 function build() {

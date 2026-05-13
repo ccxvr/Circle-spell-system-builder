@@ -1,11 +1,16 @@
 :root {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #e8e8e8;
-  background: #111216;
-  --panel: #1b1d24;
-  --muted: #a9adba;
-  --line: #343846;
-  --accent: #d7b36a;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  color: #efe8d0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(149, 111, 46, 0.22), transparent 26rem),
+    radial-gradient(circle at 80% 20%, rgba(74, 53, 118, 0.24), transparent 30rem),
+    #0c0b10;
+  --panel: rgba(21, 18, 27, 0.92);
+  --muted: #b8ad93;
+  --line: #51442f;
+  --accent: #d8b66a;
+  --accent2: #9ad7d3;
+  --danger: #e78888;
 }
 
 * { box-sizing: border-box; }
@@ -13,12 +18,24 @@
 body { margin: 0; }
 
 header {
-  padding: 24px;
+  padding: 28px;
   border-bottom: 1px solid var(--line);
-  background: radial-gradient(circle at top left, #2b2630, #111216 55%);
+  background:
+    linear-gradient(90deg, rgba(216, 182, 106, 0.10), transparent),
+    rgba(0,0,0,0.20);
 }
 
-h1, h2, h3 { margin: 0 0 12px; }
+h1 {
+  margin: 0 0 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h2, h3 {
+  margin: 0 0 12px;
+  color: #f4db9d;
+  letter-spacing: 0.03em;
+}
 
 p { color: var(--muted); line-height: 1.5; }
 
@@ -32,9 +49,12 @@ main {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+  box-shadow:
+    0 18px 60px rgb(0 0 0 / 0.38),
+    inset 0 0 28px rgba(216, 182, 106, 0.035);
+  backdrop-filter: blur(8px);
 }
 
 .editor-panel { grid-row: span 2; }
@@ -42,25 +62,28 @@ main {
 textarea {
   width: 100%;
   min-height: 260px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #101116;
-  color: #f1f1f1;
+  border-radius: 14px;
+  border: 1px solid #5a4930;
+  background: #0d0b11;
+  color: #f8ecd0;
   padding: 12px;
   font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   resize: vertical;
+  box-shadow: inset 0 0 24px rgba(0,0,0,.35);
 }
 
 button {
-  border: 1px solid #5e5031;
-  background: #2b2416;
+  border: 1px solid #7e673a;
+  background: linear-gradient(#342817, #21180e);
   color: #ffe4a5;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 999px;
+  padding: 10px 14px;
   cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.03em;
 }
 
-button:hover { background: #3a2e19; }
+button:hover { background: linear-gradient(#493718, #2e2110); }
 
 .row {
   display: flex;
@@ -72,16 +95,17 @@ button:hover { background: #3a2e19; }
 .hint { font-size: 14px; }
 
 code {
-  background: #0e0f14;
+  background: #0e0b11;
   border: 1px solid var(--line);
   padding: 1px 4px;
   border-radius: 4px;
+  color: #f1d48a;
 }
 
 .circle-mount {
   display: grid;
   place-items: center;
-  min-height: 600px;
+  min-height: 650px;
   overflow: auto;
 }
 
@@ -97,18 +121,19 @@ svg {
 }
 
 #summary th, #summary td {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(216, 182, 106, 0.25);
   padding: 8px;
   text-align: left;
 }
 
 #jsonOutput {
   overflow: auto;
-  background: #101116;
+  background: #0d0b11;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px;
-  color: #cbd5e1;
+  color: #d3c7aa;
+  max-height: 340px;
 }
 
 .reference {
@@ -118,13 +143,32 @@ svg {
 }
 
 .ref-card {
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid rgba(216, 182, 106, 0.25);
+  border-radius: 12px;
   padding: 8px;
-  background: #14161d;
+  background: rgba(11, 9, 15, 0.68);
 }
 
 .ref-card strong { color: var(--accent); }
+
+.spell-description {
+  border: 1px solid rgba(216, 182, 106, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(216, 182, 106, 0.08), transparent 16rem),
+    rgba(11, 9, 15, 0.72);
+  color: #f7e8c2;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.spell-description .subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 10px;
+}
 
 footer {
   padding: 16px 24px 32px;

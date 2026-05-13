@@ -7,24 +7,22 @@ Static web app for building WILDER / Concentric Arcana spell circles.
 - Write spells using ring syntax.
 - Parse Effects, Vectors, Modifiers, and Aspects.
 - Calculate ring load and spell complexity.
-- Render a symbolic spell circle as SVG.
+- Generate a plain-language spell description by chaining subspell readings.
+- Render an arcane rune-based spell circle as SVG.
 - Export SVG.
 - Copy parsed spell JSON.
 
 ## Example Syntax
 
 ```txt
-Ring 1: Harm > Fire
-Ring 2: Harm > Dart > Sphere > Fire
+Ring 1: Harm > Dart > Fire
+Ring 2: Neutral > Summon > Fire
 ```
 
-```txt
-Neutral > Summon(T) > Fire
-```
+Output description:
 
 ```txt
-Ring 1: Bless > Light
-Ring 2: Bless > Circle(A) > Light
+A harmful fire dart that summons a Fire creature at the impact location.
 ```
 
 ## GitHub Pages Hosting
@@ -54,10 +52,10 @@ docs/
 ## Next Development Tasks
 
 - Add draggable glyph placement.
-- Add custom rune art per glyph.
+- Add custom image import for rune art.
 - Add save/load spell library.
-- Add validation for empowerment rules.
-- Add multi-subspell parsing inside a single ring.
+- Add stronger validation for empowerment rules.
+- Add better multi-subspell grammar for trailing empowerments.
 - Add PNG export.
 - Add hex-grid preview for vector areas.
 - Add print-friendly spell card export.

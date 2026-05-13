@@ -2,7 +2,7 @@
 
 This prototype is based on the WILDER spellcasting syntax currently in development.
 
-Core assumptions included in this app:
+Current app assumptions:
 
 - Spells are read from inner ring to outer ring.
 - Rings are read clockwise.
@@ -15,5 +15,6 @@ Core assumptions included in this app:
 - Duration modifier `(T)` doubles attached vector complexity.
 - Total ring load = ring glyph complexity × ring level.
 - Total spell load maps to spell complexity.
+- Descriptions are generated heuristically from subspell sequence and previous terminal location.
 
 This is a technical prototype, not a final rules authority.
