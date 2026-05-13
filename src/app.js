@@ -907,11 +907,11 @@ function describeSpell(spell) {
   }
 
   function renderCircle(spell) {
-    const size = 820;
+    const size = 410;
     const cx = size / 2;
     const cy = size / 2;
-    const ringGap = 84;
-    const baseRadius = 90;
+    const ringGap = 42;
+    const baseRadius = 45;
     const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 78;
 
     let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
