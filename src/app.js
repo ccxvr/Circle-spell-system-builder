@@ -604,6 +604,7 @@ function describeSubspell(subspell, previous, previousRings) {
 
     phrase =
       `a ${effect.name.toLowerCase()} ` +
+      `${rangeAdjective(mainVector)}` +
       `${aspectAdj} dart that ${mechanics}`;
   }
 
