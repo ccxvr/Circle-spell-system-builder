@@ -906,16 +906,20 @@ function describeSpell(spell) {
     `;
   }
 
-  function renderCircle(spell) {
-    const size = 820;
-    const displaySize = 410;
-    const cx = size / 2;
-    const cy = size / 2;
-    const ringGap = 42;
-    const baseRadius = 45;
-    const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 78;
+function renderCircle(spell) {
+  const displaySize = 650;
 
-    let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" width="410" height="410" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
+  const ringGap = 84;
+  const baseRadius = 90;
+  const padding = 90;
+
+  const maxRadius = baseRadius + (spell.rings.length - 1) * ringGap + 78;
+
+  const size = maxRadius * 2 + padding * 2;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  let svg = `<svg id="spellSvg" xmlns="http://www.w3.org/2000/svg" width="${displaySize}" height="${displaySize}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Spell circle">
       <defs>
         <radialGradient id="bg" cx="50%" cy="45%" r="65%">
           <stop offset="0%" stop-color="#1a1622"/>
