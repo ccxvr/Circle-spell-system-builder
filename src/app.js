@@ -907,7 +907,8 @@ function describeSpell(spell) {
   }
 
   function renderCircle(spell) {
-    const size = 410;
+    const size = 820;
+    const displaySize = 410;
     const cx = size / 2;
     const cy = size / 2;
     const ringGap = 42;
