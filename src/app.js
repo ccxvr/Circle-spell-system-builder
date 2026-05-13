@@ -648,6 +648,8 @@ function mechanicalText(effect, aspect, level) {
       reason: "has no opening effect"
     };
   }
+    const hasSummon = vectors.some(v => v.name === "Summon");
+const hasConjure = vectors.some(v => v.name === "Conjure");
 
   if ((hasSummon || hasConjure) && effect.name !== "Neutral") {
   return {
