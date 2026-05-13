@@ -989,9 +989,23 @@ function describeSpell(spell) {
       </tr>
     `).join("");
 
-    const warnings = spell.rings.flatMap(r =>
-      r.tokens.flatMap(t => t.legal === false ? [`Ring ${r.level}: ${t.raw} — ${(t.notes || ["Illegal glyph"]).join(" ")}`] : [])
-    );
+    const warnings = [];
+
+let previousSubspell = null;
+
+for (const ring of spell.rings) {
+  for (const sub of ring.subspells) {
+    sub.previousSubspell = previousSubspell;
+
+    const validation = validateSubspell(sub);
+
+    if (!validation.valid) {
+      warnings.push(`Ring ${ring.level}: ${sub.map(t => t.raw).join(" → ")} — ${validation.reason}`);
+    }
+
+    previousSubspell = sub;
+  }
+}
 
     spellDescription.innerHTML = `
       <div>${escapeHtml(spell.description)}</div>
